@@ -3,10 +3,11 @@ package com.mstniy.kelimeezber;
 import android.content.Intent;
 import android.graphics.Color;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -29,9 +30,9 @@ class Pair
     }
 };
 
-public class MainActivity extends AppCompatActivity {
+public class ExerciseFragment extends Fragment {
 
-    static final String TAG = MainActivity.class.getName();
+    static final String TAG = ExerciseFragment.class.getName();
 
     //ArrayList<Integer> uncoveredPairs = new ArrayList<Integer>();
     ArrayList<Pair> wlist;
@@ -40,7 +41,6 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<Double> hardness; // A hardness score for each pair in wlist
     TextView label;
     Button buttons[] = new Button[4];
-    FloatingActionButton fab;
     int currentPairIndex;
     boolean currentFwd;
     final int MistakeQueueLength=4;
@@ -48,15 +48,16 @@ public class MainActivity extends AppCompatActivity {
     int currentQueueIndex=MistakeQueueLength-1; // This doesn't really matter
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        label = findViewById(R.id.label);
-        buttons[0] = findViewById(R.id.button0);
-        buttons[1] = findViewById(R.id.button1);
-        buttons[2] = findViewById(R.id.button2);
-        buttons[3] = findViewById(R.id.button3);
-        fab = findViewById(R.id.fab0);
+        View rootView = inflater.inflate(R.layout.fragment_exercise, container, false);
+
+        label = rootView.findViewById(R.id.label);
+        buttons[0] = rootView.findViewById(R.id.button0);
+        buttons[1] = rootView.findViewById(R.id.button1);
+        buttons[2] = rootView.findViewById(R.id.button2);
+        buttons[3] = rootView.findViewById(R.id.button3);
         for (int i=0;i<4;i++)
             buttons[i].setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -64,20 +65,18 @@ public class MainActivity extends AppCompatActivity {
                     ButtonClicked((Button)v);
                 }
             });
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FabClicked((FloatingActionButton)v);
-            }
-        });
         GetWords();
         NewRound();
+
+        return rootView;
     }
 
+
+
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
-        GetWords(); // TODO: We don't have to reload the db each time the activity is resumed. It's enough that we reload it if the db was modified (by AddWordActivity).
+        GetWords(); // TODO: We don't have to reload the db each time the activity is resumed. It's enough that we reload it if the db was modified (by AddWordFragment).
         NewRound();
     }
 
@@ -130,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
         for (int i=0;i<MistakeQueueLength;i++)
             mistakeQueue[i] = -1;
 
-        DatabaseHelper helper = new DatabaseHelper(this);
+        DatabaseHelper helper = new DatabaseHelper(getContext());
         Pair[] pairs = helper.getPairs();
         if (pairs.length == 0) { // We just created the db
             pairs = new Pair[5];
@@ -250,9 +249,5 @@ public class MainActivity extends AppCompatActivity {
                 if (isACorrectAnswer(buttons[i].getText().toString()))
                     ChangeColorOfButton(buttons[i], true);
         }
-    }
-
-    public void FabClicked(FloatingActionButton fab) {
-        startActivity(new Intent(this, AddWordActivity.class));
     }
 }
