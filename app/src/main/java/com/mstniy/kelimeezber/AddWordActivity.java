@@ -31,9 +31,7 @@ public class AddWordActivity extends AppCompatActivity {
         String second = edit1.getText().toString();
         if (first.length() == 0 || second.length() == 0)
             return ;
-        DatabaseHelper helper = new DatabaseHelper(this);
-        helper.insertPair(new Pair(first, second));
+        ((MyApplication)getApplicationContext()).AddPair(new Pair(first, second));
         finish();
-        // TODO: Here, we need to notify the other activities. Ot maybe some other synch mechanism.
     }
 }

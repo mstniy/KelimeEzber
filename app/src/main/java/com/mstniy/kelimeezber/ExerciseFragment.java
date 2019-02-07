@@ -1,7 +1,9 @@
 package com.mstniy.kelimeezber;
 
+import android.arch.lifecycle.Observer;
 import android.content.Intent;
 import android.graphics.Color;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -24,24 +26,18 @@ public class ExerciseFragment extends Fragment {
 
     static final String TAG = ExerciseFragment.class.getName();
 
-    //ArrayList<Integer> uncoveredPairs = new ArrayList<Integer>();
-    ArrayList<Pair> wlist;
-    HashMap<String, HashSet<String>> wordTranslationsFwd;
-    HashMap<String, HashSet<String>> wordTranslationsBwd;
-    ArrayList<Double> hardness; // A hardness score for each pair in wlist
+    MyApplication app;
+    boolean currentFwd;
     TextView label;
     Button buttons[] = new Button[4];
-    int currentPairIndex;
-    boolean currentFwd;
-    final int MistakeQueueLength=4;
-    int mistakeQueue[]=new int[MistakeQueueLength];
-    int currentQueueIndex=MistakeQueueLength-1; // This doesn't really matter
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         View rootView = inflater.inflate(R.layout.fragment_exercise, container, false);
+
+        app = (MyApplication) getContext().getApplicationContext();
 
         label = rootView.findViewById(R.id.label);
         buttons[0] = rootView.findViewById(R.id.button0);
@@ -55,116 +51,33 @@ public class ExerciseFragment extends Fragment {
                     ButtonClicked((Button)v);
                 }
             });
-        GetWords();
-        NewRound();
+        app.currentPairIndex.observe(this, new Observer<Integer>() {
+            @Override
+            public void onChanged(@Nullable Integer index) {
+                cpiChanged(index);
+            }
+        });
 
         return rootView;
     }
 
-
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        GetWords(); // TODO: We don't have to reload the db each time the activity is resumed. It's enough that we reload it if the db was modified (by AddWordActivity).
-        NewRound(); // TODO: This doesn't work for fragments
-    }
-
-    /*bool AddToWordList(ifstream& in)
-    {
-        bool faultyLine=false;
-        for (int i=1; ;i++)
+    void cpiChanged(Integer index) {
+        currentFwd = new Random().nextBoolean();
+        for (int i=0;i<4;i++)
+            ChangeColorOfButton(buttons[i], false);
+        final Pair p = app.wlist.get(index);
+        final int answer=new Random().nextInt(4);
+        currentFwd = new Random().nextBoolean();
+        label.setText(currentFwd?p.first:p.second);
+        for (int i=0;i<4;i++)
         {
-            string line;
-            getline(in, line);
-            if (in.fail())
-                break;
-            auto pos = line.find("=");
-
-            //regex word_regex("(.+?)\\s*=\\s*(.+)");
-            regex word_regex("^([^#]+?)\\s*=\\s*([^#]+?)\\s*(#|$)");
-            auto words_begin = std::sregex_iterator(line.begin(), line.end(), word_regex);
-            auto words_end = std::sregex_iterator();
-            if (words_begin == words_end)
-            {
-                cout << "Line " << i << " invalid (no match found)" << endl;
-                faultyLine=true;
-                continue;
+            if (i == answer)
+                buttons[i].setText(currentFwd ? p.second : p.first);
+            else {
+                final Pair p2 = app.wlist.get(new Random().nextInt(app.wlist.size()));
+                buttons[i].setText(currentFwd?p2.second:p2.first);
             }
-            std::smatch match = *words_begin;
-            assert(match.size() == 4);
-            wlist.push_back(make_pair(match.str(1), match.str(2)));
-            uncoveredPairs.push_back(wlist.size()-1);
-            hardness.push_back(0);
         }
-        return faultyLine==false;
-    }*/
-
-    void AddPairToMaps(Pair p){
-        if (wordTranslationsFwd.containsKey(p.first) == false)
-            wordTranslationsFwd.put(p.first, new HashSet<String>());
-        if (wordTranslationsBwd.containsKey(p.second) == false)
-            wordTranslationsBwd.put(p.second, new HashSet<String>());
-        wordTranslationsFwd.get(p.first).add(p.second);
-        wordTranslationsBwd.get(p.second).add(p.first);
-    }
-
-
-    boolean GetWords()
-    {
-        wlist = new ArrayList<Pair>();
-        wordTranslationsFwd = new HashMap<String, HashSet<String>>();
-        wordTranslationsBwd = new HashMap<String, HashSet<String>>();
-        hardness = new ArrayList<Double>();
-        for (int i=0;i<MistakeQueueLength;i++)
-            mistakeQueue[i] = -1;
-
-        DatabaseHelper helper = new DatabaseHelper(getContext());
-        Pair[] pairs = helper.getPairs();
-        if (pairs.length == 0) { // We just created the db
-            pairs = new Pair[5];
-            pairs[0] = new Pair("sedan", "since");
-            pairs[1] = new Pair("annars", "otherwise");
-            pairs[2] = new Pair("även om", "even if");
-            pairs[3] = new Pair("snygg", "nice");
-            pairs[4] = new Pair("trevlig", "nice");
-        }
-        for (Pair p : pairs)
-        {
-            wlist.add(p);
-            AddPairToMaps(p);
-            //uncoveredPairs.add(uncoveredPairs.size());
-            hardness.add(0.0);
-        }
-        return true;
-    }
-
-    int GetRandomPairIndex()
-    {
-        /*if (uncoveredPairs.size() > 0) // Choose an uncovered pair
-        {
-            final int uncoveredPairsIndex = new Random().nextInt(uncoveredPairs.size());
-            final int index = uncoveredPairs.get(uncoveredPairsIndex);
-            //swap(uncoveredPairs[uncoveredPairsIndex], uncoveredPairs[uncoveredPairs.size()-1]);
-            final int tmp = uncoveredPairs.get(uncoveredPairsIndex);
-            uncoveredPairs.set(uncoveredPairsIndex, uncoveredPairs.get(uncoveredPairs.size()-1));
-            uncoveredPairs.set(uncoveredPairs.size()-1, tmp);
-            uncoveredPairs.remove(uncoveredPairs.size()-1);
-            return index;
-        }*/
-        double hardnessSum = 0;
-        for (double h : hardness)
-            hardnessSum += exp(h);
-        if (hardnessSum == 0)
-            return 0;
-        double rnd = new Random().nextDouble() * hardnessSum;
-        for (int i=0; i<hardness.size(); i++)
-        {
-            if (exp(hardness.get(i))>rnd)
-                return i;
-            rnd -= exp(hardness.get(i));
-        }
-        return hardness.size()-1; // Mathematically, this cannot happen. But we're dealing with floats, so who knows.
     }
 
     void ChangeColorOfButton(Button button, boolean highlight)
@@ -175,37 +88,11 @@ public class ExerciseFragment extends Fragment {
             button.setBackgroundResource(android.R.drawable.btn_default);
     }
 
-    void NewRound()
-    {
-        //cout << (wlist.size()-uncoveredPairs.size()) << "/" << wlist.size() << " pairs covered." << endl;
-        for (int i=0;i<4;i++)
-            ChangeColorOfButton(buttons[i], false);
-        currentQueueIndex=(currentQueueIndex+1)%MistakeQueueLength;
-        if (mistakeQueue[currentQueueIndex] != -1)
-            currentPairIndex=mistakeQueue[currentQueueIndex];
-        else
-            currentPairIndex = GetRandomPairIndex();
-        mistakeQueue[currentQueueIndex]=-1;
-	    final Pair p = wlist.get(currentPairIndex);
-	    final int answer=new Random().nextInt(4);
-        currentFwd = new Random().nextBoolean();
-        label.setText(currentFwd?p.first:p.second);
-        for (int i=0;i<4;i++)
-        {
-            if (i == answer)
-                buttons[i].setText(currentFwd ? p.second : p.first);
-		    else {
-			    final Pair p2 = wlist.get(new Random().nextInt(wlist.size()));
-                buttons[i].setText(currentFwd?p2.second:p2.first);
-            }
-        }
-    }
-
     boolean isACorrectAnswer(String s) {
         if (currentFwd)
-            return wordTranslationsFwd.get(label.getText().toString()).contains(s);
+            return app.wordTranslationsFwd.get(label.getText().toString()).contains(s);
         else
-            return wordTranslationsBwd.get(label.getText().toString()).contains(s);
+            return app.wordTranslationsBwd.get(label.getText().toString()).contains(s);
     }
 
     public void ButtonClicked(Button button)
@@ -220,21 +107,21 @@ public class ExerciseFragment extends Fragment {
         if (isACorrectAnswer(button.getText().toString()))
         {
             //cout << "Correct!" << endl;
-		    final double oldScore = hardness.get(currentPairIndex);
+		    final double oldScore = app.hardness.get(app.currentPairIndex.getValue());
             double newScore = oldScore;
-            if (mistakeQueue[currentQueueIndex] == -1) // The user chose the correct answer at the first try
+            if (app.mistakeQueue[app.currentQueueIndex] == -1) // The user chose the correct answer at the first try
                 newScore -= 0.33;
             else
                 newScore += 1;
             newScore = min(newScore, 2.0);
             newScore = max(newScore, -1.33);
-            hardness.set(currentPairIndex, newScore); // Update the score of the current word
-            NewRound();
+            app.hardness.set(app.currentPairIndex.getValue(), newScore); // Update the score of the current word
+            app.NewRound();
         }
         else
         {
             //cout << "Incorrect!" << endl;
-            mistakeQueue[currentQueueIndex]=currentPairIndex;
+            app.mistakeQueue[app.currentQueueIndex]=app.currentPairIndex.getValue();
             for (int i=0;i<4;i++)
                 if (isACorrectAnswer(buttons[i].getText().toString()))
                     ChangeColorOfButton(buttons[i], true);

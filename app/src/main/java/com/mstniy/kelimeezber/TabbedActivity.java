@@ -21,6 +21,8 @@ import android.widget.TextView;
 
 public class TabbedActivity extends AppCompatActivity {
 
+    MyApplication app;
+
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -40,6 +42,10 @@ public class TabbedActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tabbed);
+
+        app = (MyApplication) getApplicationContext();
+        app.SyncWords();
+        app.NewRound();
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);

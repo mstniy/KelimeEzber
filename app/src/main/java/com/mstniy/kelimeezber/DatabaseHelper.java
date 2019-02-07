@@ -6,12 +6,14 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class DatabaseHelper{
 
+    private static final String TAG = DatabaseHelper.class.getName();
     private static final int DATABASE_VERSION = 1;
     private static final String DATABASE_NAME = "kelimeezber_db";
     private static final String TABLE_NAME = "kelimeler";
