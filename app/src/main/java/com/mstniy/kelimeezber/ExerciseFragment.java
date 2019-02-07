@@ -20,16 +20,6 @@ import static java.lang.Math.exp;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
-class Pair
-{
-    public String first;
-    public String second;
-    public Pair(String _first, String _second) {
-        first = _first;
-        second = _second;
-    }
-};
-
 public class ExerciseFragment extends Fragment {
 
     static final String TAG = ExerciseFragment.class.getName();
@@ -76,8 +66,8 @@ public class ExerciseFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        GetWords(); // TODO: We don't have to reload the db each time the activity is resumed. It's enough that we reload it if the db was modified (by AddWordFragment).
-        NewRound();
+        GetWords(); // TODO: We don't have to reload the db each time the activity is resumed. It's enough that we reload it if the db was modified (by AddWordActivity).
+        NewRound(); // TODO: This doesn't work for fragments
     }
 
     /*bool AddToWordList(ifstream& in)

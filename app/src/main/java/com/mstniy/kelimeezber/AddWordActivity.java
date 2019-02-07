@@ -1,34 +1,29 @@
 package com.mstniy.kelimeezber;
 
 import android.support.design.widget.TextInputEditText;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.view.LayoutInflater;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 
-public class AddWordFragment extends Fragment {
+public class AddWordActivity extends AppCompatActivity {
 
     Button addButton;
     TextInputEditText edit0, edit1;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        View rootView = inflater.inflate(R.layout.fragment_add_word, container, false);
-        addButton = rootView.findViewById(R.id.addButton);
-        edit0 = rootView.findViewById(R.id.edit0);
-        edit1 = rootView.findViewById(R.id.edit1);
+        setContentView(R.layout.activity_add_word);
+        addButton = findViewById(R.id.addButton);
+        edit0 = findViewById(R.id.edit0);
+        edit1 = findViewById(R.id.edit1);
         addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 AddButtonClicked();
             }
         });
-
-        return rootView;
     }
 
     void AddButtonClicked() {
@@ -36,9 +31,9 @@ public class AddWordFragment extends Fragment {
         String second = edit1.getText().toString();
         if (first.length() == 0 || second.length() == 0)
             return ;
-        DatabaseHelper helper = new DatabaseHelper(getContext());
+        DatabaseHelper helper = new DatabaseHelper(this);
         helper.insertPair(new Pair(first, second));
-        edit0.setText("");
-        edit1.setText("");
+        finish();
+        // TODO: Here, we need to notify the other activities. Ot maybe some other synch mechanism.
     }
 }

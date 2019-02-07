@@ -16,7 +16,7 @@
                 <!--<category android:name="android.intent.category.LAUNCHER" />-->
             </intent-filter>
         </activity>
-        <activity android:name=".AddWordFragment" />
+        <activity android:name=".AddWordActivity" />
         <activity
             android:name=".TabbedActivity"
             android:label="@string/title_activity_tabbed"

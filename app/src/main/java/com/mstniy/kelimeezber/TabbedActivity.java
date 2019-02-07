@@ -132,7 +132,7 @@ public class TabbedActivity extends AppCompatActivity {
             if (position == 0)
                 return new ExerciseFragment();
             if (position == 1)
-                return new AddWordFragment();
+                return new WordListFragment();
             return PlaceholderFragment.newInstance(position + 1);
         }
 
