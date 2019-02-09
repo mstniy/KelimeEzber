@@ -24,7 +24,7 @@ public class MyApplication extends Application {
     int currentQueueIndex = MistakeQueueLength-1;
     MutableLiveData<Integer> currentPairIndex = new MutableLiveData<>();
 
-    MyApplication() {
+    public MyApplication() {
         //SyncWords(); // Doing DB operations in the Application constructor is just asking for trouble.
         //NewRound();
         currentPairIndex.setValue(0);
