@@ -17,11 +17,15 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
 class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
 
     private static final String TAG = MyAdapter.class.getName();
 
-    ObservableArrayList<Pair> mDataset;
+    private ArrayList<Pair> mDataset;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -40,7 +44,20 @@ class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
 
     // Provide a suitable constructor (depends on the kind of dataset)
     public MyAdapter(ObservableArrayList<Pair> myDataset) {
-        mDataset = myDataset;
+        setDataset(myDataset);
+    }
+
+    public void setDataset(ArrayList<Pair> newDataset) {
+        mDataset = new ArrayList<>();
+        for (Pair p : newDataset)
+            mDataset.add(p);
+        Collections.sort(mDataset, new Comparator<Pair>() {
+            @Override
+            public int compare(Pair l, Pair r)
+            {
+                return SwedishLexicographicalComparator.compare(l.first, r.first)?-1:1;
+            }
+        });
     }
 
     // Create new views (invoked by the layout manager)
@@ -114,31 +131,31 @@ public class WordListFragment extends Fragment {
         app.wlist.addOnListChangedCallback(new ObservableList.OnListChangedCallback<ObservableList<Pair>>() {
             @Override
             public void onChanged(ObservableList<Pair> sender) {
-                mAdapter.mDataset = app.wlist;
+                mAdapter.setDataset(app.wlist);
                 mAdapter.notifyDataSetChanged();
             }
 
             @Override
             public void onItemRangeChanged(ObservableList<Pair> sender, int positionStart, int itemCount) {
-                mAdapter.mDataset = app.wlist;
+                mAdapter.setDataset(app.wlist);
                 mAdapter.notifyDataSetChanged();
             }
 
             @Override
             public void onItemRangeInserted(ObservableList<Pair> sender, int positionStart, int itemCount) {
-                mAdapter.mDataset = app.wlist;
+                mAdapter.setDataset(app.wlist);
                 mAdapter.notifyDataSetChanged();
             }
 
             @Override
             public void onItemRangeMoved(ObservableList<Pair> sender, int fromPosition, int toPosition, int itemCount) {
-                mAdapter.mDataset = app.wlist;
+                mAdapter.setDataset(app.wlist);
                 mAdapter.notifyDataSetChanged();
             }
 
             @Override
             public void onItemRangeRemoved(ObservableList<Pair> sender, int positionStart, int itemCount) {
-                mAdapter.mDataset = app.wlist;
+                mAdapter.setDataset(app.wlist);
                 mAdapter.notifyDataSetChanged();
             }
         });
