@@ -5,27 +5,27 @@ import android.databinding.ObservableArrayList;
 import android.databinding.ObservableList;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
+import android.support.v7.widget.SearchView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
-class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
+class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.MyViewHolder> {
 
-    private static final String TAG = MyAdapter.class.getName();
+    private static final String TAG = RecycleViewAdapter.class.getName();
 
     private ArrayList<Pair> mDataset;
+    private ArrayList<Pair> mDatasetUnfiltered;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -43,7 +43,7 @@ class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public MyAdapter(ObservableArrayList<Pair> myDataset) {
+    public RecycleViewAdapter(ObservableArrayList<Pair> myDataset) {
         setDataset(myDataset);
     }
 
@@ -51,6 +51,7 @@ class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
         mDataset = new ArrayList<>();
         for (Pair p : newDataset)
             mDataset.add(p);
+        mDatasetUnfiltered = mDataset;
         Collections.sort(mDataset, new Comparator<Pair>() {
             @Override
             public int compare(Pair l, Pair r)
@@ -60,10 +61,25 @@ class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
         });
     }
 
+    public void filter(String text) {
+        if(text.isEmpty()){
+            mDataset = mDatasetUnfiltered;
+        } else{
+            mDataset = new ArrayList<>();
+            text = text.toLowerCase();
+            for(Pair p : mDatasetUnfiltered){
+                if(p.first.toLowerCase().contains(text) || p.second.toLowerCase().contains(text)){
+                    mDataset.add(p);
+                }
+            }
+        }
+        notifyDataSetChanged();
+    }
+
     // Create new views (invoked by the layout manager)
     @Override
-    public MyAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent,
-                                                     int viewType) {
+    public RecycleViewAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent,
+                                                              int viewType) {
         // create a new view
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.word_list_item, parent, false);
@@ -93,9 +109,10 @@ public class WordListFragment extends Fragment {
 
     MyApplication app;
     RecyclerView mRecyclerView;
-    MyAdapter mAdapter;
+    RecycleViewAdapter mAdapter;
     RecyclerView.LayoutManager mLayoutManager;
     FloatingActionButton fab;
+    SearchView searchView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -125,7 +142,7 @@ public class WordListFragment extends Fragment {
         mLayoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(mLayoutManager);
 
-        mAdapter = new MyAdapter(app.wlist);
+        mAdapter = new RecycleViewAdapter(app.wlist);
         mRecyclerView.setAdapter(mAdapter);
 
         app.wlist.addOnListChangedCallback(new ObservableList.OnListChangedCallback<ObservableList<Pair>>() {
@@ -157,6 +174,23 @@ public class WordListFragment extends Fragment {
             public void onItemRangeRemoved(ObservableList<Pair> sender, int positionStart, int itemCount) {
                 mAdapter.setDataset(app.wlist);
                 mAdapter.notifyDataSetChanged();
+            }
+        });
+
+
+
+        searchView = rootView.findViewById(R.id.action_search);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                mAdapter.filter(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                mAdapter.filter(newText);
+                return true;
             }
         });
 
