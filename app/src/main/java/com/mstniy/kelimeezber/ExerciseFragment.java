@@ -51,31 +51,36 @@ public class ExerciseFragment extends Fragment {
                     ButtonClicked((Button)v);
                 }
             });
-        app.currentPairIndex.observe(this, new Observer<Integer>() {
+        app.currentPair.observe(this, new Observer<Pair>() {
             @Override
-            public void onChanged(@Nullable Integer index) {
-                cpiChanged(index);
+            public void onChanged(@Nullable Pair pair) {
+                cpiChanged(pair);
             }
         });
 
         return rootView;
     }
 
-    void cpiChanged(Integer index) {
-        currentFwd = new Random().nextBoolean();
+    void cpiChanged(Pair p) {
         for (int i=0;i<4;i++)
             ChangeColorOfButton(buttons[i], false);
-        final Pair p = app.wlist.get(index);
-        final int answer=new Random().nextInt(4);
-        currentFwd = new Random().nextBoolean();
-        label.setText(currentFwd?p.first:p.second);
-        for (int i=0;i<4;i++)
-        {
-            if (i == answer)
-                buttons[i].setText(currentFwd ? p.second : p.first);
-            else {
-                final Pair p2 = app.wlist.get(new Random().nextInt(app.wlist.size()));
-                buttons[i].setText(currentFwd?p2.second:p2.first);
+        if (p == null) {
+            label.setText("");
+            for (int i=0; i<4; i++)
+                buttons[i].setText("");
+        }
+        else {
+            currentFwd = new Random().nextBoolean();
+            final int answer=new Random().nextInt(4);
+            label.setText(currentFwd?p.first:p.second);
+            for (int i=0;i<4;i++)
+            {
+                if (i == answer)
+                    buttons[i].setText(currentFwd ? p.second : p.first);
+                else {
+                    final Pair p2 = PairChooser.ChoosePairRandom(app);
+                    buttons[i].setText(currentFwd?p2.second:p2.first);
+                }
             }
         }
     }
@@ -97,6 +102,9 @@ public class ExerciseFragment extends Fragment {
 
     public void ButtonClicked(Button button)
     {
+        final Pair currentPair = app.currentPair.getValue();
+        if (currentPair == null)
+            return ;
 	    int buttonId;
 	    if (button.getId() == R.id.button0) buttonId = 0;
         else if (button.getId() == R.id.button1) buttonId = 1;
@@ -107,21 +115,22 @@ public class ExerciseFragment extends Fragment {
         if (isACorrectAnswer(button.getText().toString()))
         {
             //cout << "Correct!" << endl;
-		    final double oldScore = app.hardness.get(app.currentPairIndex.getValue());
+		    final double oldScore = currentPair.hardness;
             double newScore = oldScore;
-            if (app.mistakeQueue[app.currentQueueIndex] == -1) // The user chose the correct answer at the first try
+            if (app.mistakeQueue[app.currentQueueIndex] == null) // The user chose the correct answer at the first try
                 newScore -= 0.33;
             else
                 newScore += 1;
             newScore = min(newScore, 2.0);
             newScore = max(newScore, -1.33);
-            app.hardness.set(app.currentPairIndex.getValue(), newScore); // Update the score of the current word
+
+            currentPair.hardness = newScore; // Update the score of the current word
             app.NewRound();
         }
         else
         {
             //cout << "Incorrect!" << endl;
-            app.mistakeQueue[app.currentQueueIndex]=app.currentPairIndex.getValue();
+            app.mistakeQueue[app.currentQueueIndex]=currentPair;
             for (int i=0;i<4;i++)
                 if (isACorrectAnswer(buttons[i].getText().toString()))
                     ChangeColorOfButton(buttons[i], true);

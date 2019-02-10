@@ -18,28 +18,18 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 class MyViewHolder extends RecyclerView.ViewHolder {
     public TextView mTextView0, mTextView1;
     public Button removeButton;
-    public Pair p;
-    public MyViewHolder(View view, Pair _p, TextView _mTextView0, TextView _mTextView1, Button _removeButton) {
+    public MyViewHolder(View view, TextView _mTextView0, TextView _mTextView1, Button _removeButton) {
         super(view);
-        p = _p;
         mTextView0 = _mTextView0;
         mTextView1 = _mTextView1;
         removeButton = _removeButton;
-    }
-}
-
-class PairAndIndex {
-    public Pair p;
-    public int wlistIndex;
-
-    public PairAndIndex(Pair _p, int _wlistIndex) {
-        p = _p;
-        wlistIndex = _wlistIndex;
     }
 }
 
@@ -48,39 +38,35 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     private static final String TAG = RecycleViewAdapter.class.getName();
 
     MyApplication app;
-    private ArrayList<PairAndIndex> mDataset;
-    private ArrayList<PairAndIndex> mDatasetUnfiltered;
+    private ArrayList<Pair> mDataset;
+    private HashSet<Pair> mDatasetUnfiltered;
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public RecycleViewAdapter(MyApplication _app, ObservableArrayList<Pair> myDataset) {
+    public RecycleViewAdapter(MyApplication _app, HashSet<Pair> myDataset) {
         app = _app;
         setDataset(myDataset);
     }
 
-    public void setDataset(ArrayList<Pair> newDataset) {
+    public void setDataset(HashSet<Pair> newDataset) {
+        mDatasetUnfiltered = newDataset;
         mDataset = new ArrayList<>();
-        for (int i=0; i<newDataset.size(); i++)
-            mDataset.add(new PairAndIndex(newDataset.get(i), i));
-        mDatasetUnfiltered = mDataset;
-        Collections.sort(mDataset, new Comparator<PairAndIndex>() {
+        for (Pair p : newDataset)
+            mDataset.add(p);
+        Collections.sort(mDataset, new Comparator<Pair>() {
             @Override
-            public int compare(PairAndIndex l, PairAndIndex r)
+            public int compare(Pair l, Pair r)
             {
-                return SwedishLexicographicalComparator.compare(l.p.first, r.p.first)?-1:1;
+                return SwedishLexicographicalComparator.compare(l.first, r.first)?-1:1;
             }
         });
     }
 
     public void filter(String text) {
-        if(text.isEmpty()){
-            mDataset = mDatasetUnfiltered;
-        } else{
-            mDataset = new ArrayList<>();
-            text = text.toLowerCase();
-            for(PairAndIndex p : mDatasetUnfiltered){
-                if(p.p.first.toLowerCase().contains(text) || p.p.second.toLowerCase().contains(text)){
-                    mDataset.add(p);
-                }
+        mDataset = new ArrayList<>();
+        text = text.toLowerCase();
+        for(Pair p : mDatasetUnfiltered){
+            if(p.first.toLowerCase().contains(text) || p.second.toLowerCase().contains(text)){
+                mDataset.add(p);
             }
         }
         notifyDataSetChanged();
@@ -94,7 +80,6 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
                 .inflate(R.layout.word_list_item, parent, false);
         MyViewHolder vh = new MyViewHolder(
                 v,
-                null,
                 (TextView)v.findViewById(R.id.textView0),
                 (TextView)v.findViewById(R.id.textView1),
                 (Button)v.findViewById(R.id.removeButton));
@@ -104,14 +89,13 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(MyViewHolder holder, final int position) {
-        holder.mTextView0.setText(mDataset.get(position).p.first);
-        holder.mTextView1.setText(mDataset.get(position).p.second);
-        holder.p = mDataset.get(position).p;
+        holder.mTextView0.setText(mDataset.get(position).first);
+        holder.mTextView1.setText(mDataset.get(position).second);
 
         holder.removeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                app.RemovePair(mDataset.get(position).wlistIndex);
+                app.RemovePair(mDataset.get(position));
             }
         });
     }
@@ -163,39 +147,13 @@ public class WordListFragment extends Fragment {
         mAdapter = new RecycleViewAdapter(app, app.wlist);
         mRecyclerView.setAdapter(mAdapter);
 
-        app.wlist.addOnListChangedCallback(new ObservableList.OnListChangedCallback<ObservableList<Pair>>() {
+        app.wlistObservers.add(new Runnable() {
             @Override
-            public void onChanged(ObservableList<Pair> sender) {
-                mAdapter.setDataset(app.wlist);
-                mAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onItemRangeChanged(ObservableList<Pair> sender, int positionStart, int itemCount) {
-                mAdapter.setDataset(app.wlist);
-                mAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onItemRangeInserted(ObservableList<Pair> sender, int positionStart, int itemCount) {
-                mAdapter.setDataset(app.wlist);
-                mAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onItemRangeMoved(ObservableList<Pair> sender, int fromPosition, int toPosition, int itemCount) {
-                mAdapter.setDataset(app.wlist);
-                mAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onItemRangeRemoved(ObservableList<Pair> sender, int positionStart, int itemCount) {
+            public void run() {
                 mAdapter.setDataset(app.wlist);
                 mAdapter.notifyDataSetChanged();
             }
         });
-
-
 
         searchView = rootView.findViewById(R.id.action_search);
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
