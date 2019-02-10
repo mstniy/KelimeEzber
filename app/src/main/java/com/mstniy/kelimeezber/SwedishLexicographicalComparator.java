@@ -3,7 +3,7 @@ package com.mstniy.kelimeezber;
 import java.util.HashMap;
 
 public class SwedishLexicographicalComparator {
-    public static boolean compare(String a, String b) { // < comparsion
+    public static int compare(String a, String b) { // < comparsion
         HashMap<Character, Integer> charMap = new HashMap<>();
         charMap.put('a',  0);
         charMap.put('ä',  0);
@@ -48,8 +48,13 @@ public class SwedishLexicographicalComparator {
             if (codeB == null)
                 codeB = charMap.size();
             if (codeA != codeB)
-                return codeA < codeB;
+                return (codeA < codeB)?-1:1;
         }
-        return a.length() < b.length();
+        if (a.length() < b.length())
+            return -1;
+        else if (a.length() == b.length())
+            return 0;
+        else
+            return 1;
     }
 }

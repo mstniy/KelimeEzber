@@ -56,7 +56,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
             @Override
             public int compare(Pair l, Pair r)
             {
-                return SwedishLexicographicalComparator.compare(l.first, r.first)?-1:1;
+                return SwedishLexicographicalComparator.compare(l.first, r.first);
             }
         });
     }
