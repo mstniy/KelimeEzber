@@ -22,7 +22,7 @@ public class MyApplication extends Application {
     final int MistakeQueueLength=4;
     int mistakeQueue[]=new int[MistakeQueueLength];
     int currentQueueIndex = MistakeQueueLength-1;
-    MutableLiveData<Integer> currentPairIndex = new MutableLiveData<>();
+    MutableLiveData<Integer> currentPairIndex = new MutableLiveData<>();...//TODO: We can remove items from wlist. So this field stops making sense.
 
     public MyApplication() {
         //SyncWords(); // Doing DB operations in the Application constructor is just asking for trouble.
@@ -59,7 +59,8 @@ public class MyApplication extends Application {
                 mistakeQueue[i] = -1;
         if (currentPairIndex.getValue() == index)
             NewRound();
-        // TODO: Remove the pair from the DB, too. -> Requires that we keep the database id in Pair, too.
+        DatabaseHelper helper = new DatabaseHelper(this);
+        helper.removePair(p);
     }
 
     boolean SyncWords()
@@ -77,11 +78,11 @@ public class MyApplication extends Application {
         Pair[] pairs = helper.getPairs();
         if (pairs.length == 0) { // We just created the db, add the mock words
             pairs = new Pair[5];
-            pairs[0] = new Pair("sedan", "since");
-            pairs[1] = new Pair("annars", "otherwise");
-            pairs[2] = new Pair("även om", "even if");
-            pairs[3] = new Pair("snygg", "nice");
-            pairs[4] = new Pair("trevlig", "nice");
+            pairs[0] = new Pair(0, "sedan", "since"); // AddPair will set proper id's once these Pair's are added to the db.
+            pairs[1] = new Pair(0, "annars", "otherwise");
+            pairs[2] = new Pair(0, "även om", "even if");
+            pairs[3] = new Pair(0, "snygg", "nice");
+            pairs[4] = new Pair(0, "trevlig", "nice");
             for (Pair p : pairs)
                 AddPair(p); // AddPair also adds them to the DB
         }

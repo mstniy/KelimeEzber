@@ -20,43 +20,53 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.MyViewHolder> {
+class MyViewHolder extends RecyclerView.ViewHolder {
+    public TextView mTextView0, mTextView1;
+    public Button removeButton;
+    public Pair p;
+    public MyViewHolder(View view, Pair _p, TextView _mTextView0, TextView _mTextView1, Button _removeButton) {
+        super(view);
+        p = _p;
+        mTextView0 = _mTextView0;
+        mTextView1 = _mTextView1;
+        removeButton = _removeButton;
+    }
+}
+
+class PairAndIndex {
+    public Pair p;
+    public int wlistIndex;
+
+    public PairAndIndex(Pair _p, int _wlistIndex) {
+        p = _p;
+        wlistIndex = _wlistIndex;
+    }
+}
+
+class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
 
     private static final String TAG = RecycleViewAdapter.class.getName();
 
-    private ArrayList<Pair> mDataset;
-    private ArrayList<Pair> mDatasetUnfiltered;
-
-    // Provide a reference to the views for each data item
-    // Complex data items may need more than one view per item, and
-    // you provide access to all the views for a data item in a view holder
-    public static class MyViewHolder extends RecyclerView.ViewHolder {
-        public TextView mTextView0, mTextView1;
-        public Button removeButton;
-        public MyViewHolder(View view, TextView _mTextView0, TextView _mTextView1, Button _removeButton) {
-            super(view);
-            mTextView0 = _mTextView0;
-            mTextView1 = _mTextView1;
-            removeButton = _removeButton;
-            //TODO: Here, we also need to set the onClickListener of the removeButton.
-        }
-    }
+    MyApplication app;
+    private ArrayList<PairAndIndex> mDataset;
+    private ArrayList<PairAndIndex> mDatasetUnfiltered;
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public RecycleViewAdapter(ObservableArrayList<Pair> myDataset) {
+    public RecycleViewAdapter(MyApplication _app, ObservableArrayList<Pair> myDataset) {
+        app = _app;
         setDataset(myDataset);
     }
 
     public void setDataset(ArrayList<Pair> newDataset) {
         mDataset = new ArrayList<>();
-        for (Pair p : newDataset)
-            mDataset.add(p);
+        for (int i=0; i<newDataset.size(); i++)
+            mDataset.add(new PairAndIndex(newDataset.get(i), i));
         mDatasetUnfiltered = mDataset;
-        Collections.sort(mDataset, new Comparator<Pair>() {
+        Collections.sort(mDataset, new Comparator<PairAndIndex>() {
             @Override
-            public int compare(Pair l, Pair r)
+            public int compare(PairAndIndex l, PairAndIndex r)
             {
-                return SwedishLexicographicalComparator.compare(l.first, r.first)?-1:1;
+                return SwedishLexicographicalComparator.compare(l.p.first, r.p.first)?-1:1;
             }
         });
     }
@@ -67,8 +77,8 @@ class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.MyViewH
         } else{
             mDataset = new ArrayList<>();
             text = text.toLowerCase();
-            for(Pair p : mDatasetUnfiltered){
-                if(p.first.toLowerCase().contains(text) || p.second.toLowerCase().contains(text)){
+            for(PairAndIndex p : mDatasetUnfiltered){
+                if(p.p.first.toLowerCase().contains(text) || p.p.second.toLowerCase().contains(text)){
                     mDataset.add(p);
                 }
             }
@@ -78,13 +88,13 @@ class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.MyViewH
 
     // Create new views (invoked by the layout manager)
     @Override
-    public RecycleViewAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent,
-                                                              int viewType) {
+    public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         // create a new view
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.word_list_item, parent, false);
         MyViewHolder vh = new MyViewHolder(
                 v,
+                null,
                 (TextView)v.findViewById(R.id.textView0),
                 (TextView)v.findViewById(R.id.textView1),
                 (Button)v.findViewById(R.id.removeButton));
@@ -93,9 +103,17 @@ class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.MyViewH
 
     // Replace the contents of a view (invoked by the layout manager)
     @Override
-    public void onBindViewHolder(MyViewHolder holder, int position) {
-        holder.mTextView0.setText(mDataset.get(position).first);
-        holder.mTextView1.setText(mDataset.get(position).second);
+    public void onBindViewHolder(MyViewHolder holder, final int position) {
+        holder.mTextView0.setText(mDataset.get(position).p.first);
+        holder.mTextView1.setText(mDataset.get(position).p.second);
+        holder.p = mDataset.get(position).p;
+
+        holder.removeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                app.RemovePair(mDataset.get(position).wlistIndex);
+            }
+        });
     }
 
     // Return the size of your dataset (invoked by the layout manager)
@@ -142,7 +160,7 @@ public class WordListFragment extends Fragment {
         mLayoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(mLayoutManager);
 
-        mAdapter = new RecycleViewAdapter(app.wlist);
+        mAdapter = new RecycleViewAdapter(app, app.wlist);
         mRecyclerView.setAdapter(mAdapter);
 
         app.wlist.addOnListChangedCallback(new ObservableList.OnListChangedCallback<ObservableList<Pair>>() {

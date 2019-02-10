@@ -57,6 +57,7 @@ public class DatabaseHelper{
 
         // insert row
         long id = db.insert(TABLE_NAME, null, values);
+        p.id = id;
 
         // close db connection
         //db.close();
@@ -65,9 +66,14 @@ public class DatabaseHelper{
         return id;
     }
 
+    public int removePair(Pair p) {
+        String[] whereArgs = new String[]{String.valueOf(p.id)};
+        return db.delete(TABLE_NAME, COLUMN_ID + "=?", whereArgs);
+    }
+
     public Pair[] getPairs() {
         Cursor cursor = db.query(TABLE_NAME,
-                new String[]{COLUMN_FIRST, COLUMN_SECOND},
+                new String[]{COLUMN_ID, COLUMN_FIRST, COLUMN_SECOND},
                 null,
                 null, null, null, null, null);
 
@@ -76,13 +82,14 @@ public class DatabaseHelper{
 
         Pair[] pairs = new Pair[cursor.getCount()];
 
+        final int ciId = cursor.getColumnIndexOrThrow(COLUMN_ID);
         final int ciFirst = cursor.getColumnIndexOrThrow(COLUMN_FIRST);
         final int ciSecond = cursor.getColumnIndexOrThrow(COLUMN_SECOND);
 
         cursor.moveToFirst();
 
         for (int i=0; !cursor.isAfterLast(); i++, cursor.moveToNext())
-            pairs[i] = new Pair(cursor.getString(ciFirst), cursor.getString(ciSecond));
+            pairs[i] = new Pair(cursor.getLong(ciId), cursor.getString(ciFirst), cursor.getString(ciSecond));
 
         cursor.close();
 
