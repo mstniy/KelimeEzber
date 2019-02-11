@@ -20,8 +20,13 @@ public class MyApplication extends Application {
     MutableLiveData<Pair> currentPair = new MutableLiveData<>();
 
     public MyApplication() {
-        //SyncWords(); // Doing DB operations in the Application constructor is just asking for trouble.
-        //NewRound();
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        SyncWords();
+        NewRound();
     }
 
     private void NotifyWListObservers() {

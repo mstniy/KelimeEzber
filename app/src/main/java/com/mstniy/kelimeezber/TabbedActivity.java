@@ -44,8 +44,6 @@ public class TabbedActivity extends AppCompatActivity {
         setContentView(R.layout.activity_tabbed);
 
         app = (MyApplication) getApplicationContext();
-        app.SyncWords();
-        app.NewRound();
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
