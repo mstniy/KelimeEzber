@@ -39,6 +39,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     private static final String TAG = RecycleViewAdapter.class.getName();
 
     MyApplication app;
+    private String filterText = "";
     private ArrayList<Pair> mDataset;
     private HashSet<Pair> mDatasetUnfiltered;
 
@@ -60,14 +61,11 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
 
     public void setDataset(HashSet<Pair> newDataset) {
         mDatasetUnfiltered = newDataset;
-        mDataset = new ArrayList<>();
-        for (Pair p : newDataset)
-            mDataset.add(p);
-        sortMDataset();
-        notifyDataSetChanged();
+        filter(filterText);
     }
 
     public void filter(String text) {
+        filterText = text;
         mDataset = new ArrayList<>();
         text = text.toLowerCase();
         for(Pair p : mDatasetUnfiltered){
