@@ -47,11 +47,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
         setDataset(myDataset);
     }
 
-    public void setDataset(HashSet<Pair> newDataset) {
-        mDatasetUnfiltered = newDataset;
-        mDataset = new ArrayList<>();
-        for (Pair p : newDataset)
-            mDataset.add(p);
+    private void sortMDataset() {
         Collections.sort(mDataset, new Comparator<Pair>() {
             @Override
             public int compare(Pair l, Pair r)
@@ -59,6 +55,15 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
                 return SwedishLexicographicalComparator.compare(l.first, r.first);
             }
         });
+    }
+
+    public void setDataset(HashSet<Pair> newDataset) {
+        mDatasetUnfiltered = newDataset;
+        mDataset = new ArrayList<>();
+        for (Pair p : newDataset)
+            mDataset.add(p);
+        sortMDataset();
+        notifyDataSetChanged();
     }
 
     public void filter(String text) {
@@ -69,6 +74,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
                 mDataset.add(p);
             }
         }
+        sortMDataset();
         notifyDataSetChanged();
     }
 
@@ -151,7 +157,6 @@ public class WordListFragment extends Fragment {
             @Override
             public void run() {
                 mAdapter.setDataset(app.wlist);
-                mAdapter.notifyDataSetChanged();
             }
         });
 
