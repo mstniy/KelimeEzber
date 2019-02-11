@@ -85,22 +85,10 @@ public class DatabaseHelper{
     }
 
     public Pair[] getPairs() {
-        Cursor cursor = null;
-        try {
-            cursor = db.query(TABLE_NAME,
+        Cursor cursor = db.query(TABLE_NAME,
                     new String[]{COLUMN_ID, COLUMN_FIRST, COLUMN_SECOND, COLUMN_HARDNESS},
                     null,
                     null, null, null, null, null);
-        }
-        catch (SQLiteException e) {
-            e.printStackTrace();
-            // Probably the DB doesn't have the hardness field (old versions did not have that).
-            db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD " + COLUMN_HARDNESS + " REAL DEFAULT 0");
-            cursor = db.query(TABLE_NAME,
-                    new String[]{COLUMN_ID, COLUMN_FIRST, COLUMN_SECOND, COLUMN_HARDNESS},
-                    null,
-                    null, null, null, null, null);
-        }
 
         if (cursor == null)
             return new Pair[0];
