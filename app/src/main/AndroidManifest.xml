@@ -15,7 +15,7 @@
         </activity>
         <activity
             android:name=".TabbedActivity"
-            android:label="@string/title_activity_tabbed"
+            android:label="KelimeEzber"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
