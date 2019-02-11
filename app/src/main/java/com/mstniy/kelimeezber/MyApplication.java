@@ -18,6 +18,7 @@ public class MyApplication extends Application {
     Pair mistakeQueue[]=new Pair[MistakeQueueLength];
     int currentQueueIndex = MistakeQueueLength-1;
     MutableLiveData<Pair> currentPair = new MutableLiveData<>();
+    DatabaseHelper helper = null;
 
     public MyApplication() {
     }
@@ -25,6 +26,7 @@ public class MyApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        helper = new DatabaseHelper(this);
         SyncWords();
         NewRound();
     }
@@ -35,7 +37,6 @@ public class MyApplication extends Application {
     }
 
     void HardnessChanged(Pair p) {
-        DatabaseHelper helper = new DatabaseHelper(this);
         helper.updatePair(p);
         NotifyWListObservers(); // TODO: This isn't the most efficient way to handle a single hardness value change.
     }
@@ -56,7 +57,6 @@ public class MyApplication extends Application {
 
     void AddPair(Pair p){
         AddPairToAppState(p);
-        DatabaseHelper helper = new DatabaseHelper(this);
         helper.insertPair(p);
     }
 
@@ -70,7 +70,6 @@ public class MyApplication extends Application {
                 mistakeQueue[i] = null;
         if (currentPair.getValue() == p)
             NewRound();
-        DatabaseHelper helper = new DatabaseHelper(this);
         helper.removePair(p);
     }
 
@@ -84,7 +83,6 @@ public class MyApplication extends Application {
             mistakeQueue[i] = null;
         currentPair.setValue(null);
 
-        DatabaseHelper helper = new DatabaseHelper(this);
         Pair[] pairs = helper.getPairs();
         if (pairs.length == 0) { // We just created the db, add the mock words
             pairs = new Pair[5];
