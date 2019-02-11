@@ -23,12 +23,13 @@ import java.util.HashSet;
 import java.util.List;
 
 class MyViewHolder extends RecyclerView.ViewHolder {
-    public TextView mTextView0, mTextView1;
+    public TextView mTextView0, mTextView1, mTextViewHardness;
     public Button removeButton;
-    public MyViewHolder(View view, TextView _mTextView0, TextView _mTextView1, Button _removeButton) {
+    public MyViewHolder(View view, TextView _mTextView0, TextView _mTextView1, TextView _mTextViewHardness, Button _removeButton) {
         super(view);
         mTextView0 = _mTextView0;
         mTextView1 = _mTextView1;
+        mTextViewHardness = _mTextViewHardness;
         removeButton = _removeButton;
     }
 }
@@ -88,6 +89,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
                 v,
                 (TextView)v.findViewById(R.id.textView0),
                 (TextView)v.findViewById(R.id.textView1),
+                (TextView)v.findViewById(R.id.text_view_hardness),
                 (Button)v.findViewById(R.id.removeButton));
         return vh;
     }
@@ -97,6 +99,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     public void onBindViewHolder(MyViewHolder holder, final int position) {
         holder.mTextView0.setText(mDataset.get(position).first);
         holder.mTextView1.setText(mDataset.get(position).second);
+        holder.mTextViewHardness.setText(String.valueOf(mDataset.get(position).hardness));
 
         holder.removeButton.setOnClickListener(new View.OnClickListener() {
             @Override

@@ -125,6 +125,7 @@ public class ExerciseFragment extends Fragment {
             newScore = max(newScore, -1.33);
 
             currentPair.hardness = newScore; // Update the score of the current word
+            app.HardnessChanged(currentPair);
             app.NewRound();
         }
         else

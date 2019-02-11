@@ -20,13 +20,15 @@ public class DatabaseHelper{
     private static final String COLUMN_ID = "id";
     private static final String COLUMN_FIRST = "first";
     private static final String COLUMN_SECOND = "second";
+    private static final String COLUMN_HARDNESS = "hardness";
 
 
     public static final String CREATE_TABLE =
             "CREATE TABLE " + TABLE_NAME + "("
                 + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + COLUMN_FIRST + " TEXT,"
-                + COLUMN_SECOND + " TEXT"
+                + COLUMN_SECOND + " TEXT,"
+                + COLUMN_HARDNESS + " REAL"
                 + ")";
 
 
@@ -54,6 +56,7 @@ public class DatabaseHelper{
         // no need to add them
         values.put(COLUMN_FIRST, p.first);
         values.put(COLUMN_SECOND, p.second);
+        values.put(COLUMN_HARDNESS, p.hardness);
 
         // insert row
         long id = db.insert(TABLE_NAME, null, values);
@@ -71,11 +74,33 @@ public class DatabaseHelper{
         return db.delete(TABLE_NAME, COLUMN_ID + "=?", whereArgs);
     }
 
+    public int updatePair(Pair p) {
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_FIRST, p.first);
+        values.put(COLUMN_SECOND, p.second);
+        values.put(COLUMN_HARDNESS, p.hardness);
+
+        String[] whereArgs = new String[]{String.valueOf(p.id)};
+        return db.update(TABLE_NAME, values, COLUMN_ID + "=?", whereArgs);
+    }
+
     public Pair[] getPairs() {
-        Cursor cursor = db.query(TABLE_NAME,
-                new String[]{COLUMN_ID, COLUMN_FIRST, COLUMN_SECOND},
-                null,
-                null, null, null, null, null);
+        Cursor cursor = null;
+        try {
+            cursor = db.query(TABLE_NAME,
+                    new String[]{COLUMN_ID, COLUMN_FIRST, COLUMN_SECOND, COLUMN_HARDNESS},
+                    null,
+                    null, null, null, null, null);
+        }
+        catch (SQLiteException e) {
+            e.printStackTrace();
+            // Probably the DB doesn't have the hardness field (old versions did not have that).
+            db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD " + COLUMN_HARDNESS + " REAL DEFAULT 0");
+            cursor = db.query(TABLE_NAME,
+                    new String[]{COLUMN_ID, COLUMN_FIRST, COLUMN_SECOND, COLUMN_HARDNESS},
+                    null,
+                    null, null, null, null, null);
+        }
 
         if (cursor == null)
             return new Pair[0];
@@ -85,11 +110,12 @@ public class DatabaseHelper{
         final int ciId = cursor.getColumnIndexOrThrow(COLUMN_ID);
         final int ciFirst = cursor.getColumnIndexOrThrow(COLUMN_FIRST);
         final int ciSecond = cursor.getColumnIndexOrThrow(COLUMN_SECOND);
+        final int ciHardness = cursor.getColumnIndexOrThrow(COLUMN_HARDNESS);
 
         cursor.moveToFirst();
 
         for (int i=0; !cursor.isAfterLast(); i++, cursor.moveToNext())
-            pairs[i] = new Pair(cursor.getLong(ciId), cursor.getString(ciFirst), cursor.getString(ciSecond));
+            pairs[i] = new Pair(cursor.getLong(ciId), cursor.getString(ciFirst), cursor.getString(ciSecond), cursor.getDouble(ciHardness));
 
         cursor.close();
 

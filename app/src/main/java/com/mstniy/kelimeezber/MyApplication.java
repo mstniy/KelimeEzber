@@ -29,6 +29,12 @@ public class MyApplication extends Application {
             r.run();
     }
 
+    void HardnessChanged(Pair p) {
+        DatabaseHelper helper = new DatabaseHelper(this);
+        helper.updatePair(p);
+        NotifyWListObservers(); // TODO: This isn't the most efficient way to handle a single hardness value change.
+    }
+
     private void AddPairToAppState(Pair p) {
         wlist.add(p);
         NotifyWListObservers();
@@ -77,11 +83,11 @@ public class MyApplication extends Application {
         Pair[] pairs = helper.getPairs();
         if (pairs.length == 0) { // We just created the db, add the mock words
             pairs = new Pair[5];
-            pairs[0] = new Pair(0, "sedan", "since"); // AddPair will set proper id's once these Pair's are added to the db.
-            pairs[1] = new Pair(0, "annars", "otherwise");
-            pairs[2] = new Pair(0, "även om", "even if");
-            pairs[3] = new Pair(0, "snygg", "nice");
-            pairs[4] = new Pair(0, "trevlig", "nice");
+            pairs[0] = new Pair(0, "sedan", "since", 0); // AddPair will set proper id's once these Pair's are added to the db.
+            pairs[1] = new Pair(0, "annars", "otherwise", 0);
+            pairs[2] = new Pair(0, "även om", "even if", 0);
+            pairs[3] = new Pair(0, "snygg", "nice", 0);
+            pairs[4] = new Pair(0, "trevlig", "nice", 0);
             for (Pair p : pairs)
                 AddPair(p); // AddPair also adds them to the DB
         }
