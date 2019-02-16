@@ -202,7 +202,16 @@ public class ExerciseFragment extends Fragment {
     }
 
     void WButtonClicked(TextView button) {
-        userInputW.append(button.getText());
+        final int selStart = userInputW.getSelectionStart();
+        final int selEnd = userInputW.getSelectionEnd();
+        String olds = userInputW.getText().toString();
+        String news = olds.substring(0, selStart) + button.getText() + olds.substring(selEnd);
+        userInputW.setText(news);
+        if (selStart != selEnd)
+            userInputW.setSelection(selStart, selStart+1);
+        else
+            userInputW.setSelection(selStart+1, selStart+1);
+        //userInputW.append(button.getText());
         //WEditTextChanged(); // Android calls this automatically
     }
 
