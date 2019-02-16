@@ -21,14 +21,15 @@
 
     <EditText
         android:id="@+id/user_input"
-        android:layout_width="0dp"
+        android:layout_width="317dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="EditText"
         android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/backspace_button"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/label" />
 
@@ -43,9 +44,8 @@
         app:alignItems="flex_start"
         app:flexWrap="wrap"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/backspace_button"
         app:layout_constraintTop_toBottomOf="@+id/user_input"
         app:layout_constraintVertical_bias="0.0">
 
@@ -53,8 +53,8 @@
 
     <Button
         android:id="@+id/hint_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="59dp"
+        android:layout_height="59dp"
         android:layout_marginTop="8dp"
         android:drawableLeft="@android:drawable/ic_menu_compass"
         android:minWidth="0dp"
@@ -70,6 +70,16 @@
         android:text="TextView"
         app:layout_constraintStart_toEndOf="@+id/hint_button"
         app:layout_constraintTop_toBottomOf="@+id/letter_table" />
+
+    <Button
+        android:id="@+id/backspace_button"
+        android:layout_width="59dp"
+        android:layout_height="59dp"
+        android:layout_marginTop="16dp"
+        android:drawableStart="@android:drawable/ic_input_delete"
+        android:minWidth="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/user_input" />
 
 
 </android.support.constraint.ConstraintLayout>

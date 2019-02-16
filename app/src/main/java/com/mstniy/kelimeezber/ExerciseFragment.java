@@ -22,6 +22,7 @@ import com.google.android.flexbox.FlexboxLayout;
 import java.util.HashSet;
 import java.util.Random;
 
+import static java.lang.Math.floor;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -39,7 +40,7 @@ public class ExerciseFragment extends Fragment {
     View rootView;
     View multipleChoiceView;
     View writingView;
-    Button wHintButton;
+    Button wHintButton, wBackspace;
     FrameLayout frame;
     FlexboxLayout wLetterTable;
     boolean isMC;
@@ -78,6 +79,14 @@ public class ExerciseFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 WHintButtonClicked();
+            }
+        });
+
+        wBackspace = writingView.findViewById(R.id.backspace_button);
+        wBackspace.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                WBackspaceClicked();
             }
         });
 
@@ -171,7 +180,9 @@ public class ExerciseFragment extends Fragment {
                     WButtonClicked((TextView)v);
                 }
             });
-            ViewGroup.LayoutParams lp = new FrameLayout.LayoutParams(155, 155);
+            final float factor = getContext().getResources().getDisplayMetrics().density;
+            Log.d(TAG, String.valueOf(factor));
+            ViewGroup.LayoutParams lp = new FrameLayout.LayoutParams((int)(59*factor), (int)(59*factor));
             wLetterTable.addView(b, lp);
         }
     }
@@ -201,18 +212,27 @@ public class ExerciseFragment extends Fragment {
             return app.wordTranslationsBwd.get(app.currentPair.getValue().second.toString()).contains(s);
     }
 
+    void WSetInputTextAndSelection(String text, int selStart, int selEnd) {
+        final int roundIdBefore = app.roundId;
+        userInputW.setText(text);
+        //WEditTextChanged(); // Android calls this automatically
+        if (app.roundId != roundIdBefore) // Changing the content of the user input may change the round (if the new value is a correct answer)
+            return ;
+        userInputW.setSelection(selStart, selEnd);
+    }
+
     void WButtonClicked(TextView button) {
+        //userInputW.append(button.getText());
         final int selStart = userInputW.getSelectionStart();
         final int selEnd = userInputW.getSelectionEnd();
         String olds = userInputW.getText().toString();
         String news = olds.substring(0, selStart) + button.getText() + olds.substring(selEnd);
-        userInputW.setText(news);
+
         if (selStart != selEnd)
-            userInputW.setSelection(selStart, selStart+1);
-        else
-            userInputW.setSelection(selStart+1, selStart+1);
-        //userInputW.append(button.getText());
-        //WEditTextChanged(); // Android calls this automatically
+            WSetInputTextAndSelection(news, selStart, selStart+1);
+        else {
+            WSetInputTextAndSelection(news, selStart + 1, selStart+1);
+        }
     }
 
     void FinishRound(boolean pass) {
@@ -258,5 +278,21 @@ public class ExerciseFragment extends Fragment {
         Pair currentPair = app.currentPair.getValue();
         app.mistakeQueue[app.currentQueueIndex]=currentPair;
         wHintView.setText(currentFwd ? currentPair.second : currentPair.first);
+    }
+
+    void WBackspaceClicked() {
+        final int selStart = userInputW.getSelectionStart();
+        final int selEnd = userInputW.getSelectionEnd();
+        if (selStart == selEnd && selStart == 0)
+            return ;
+        String olds = userInputW.getText().toString();
+        if (selStart == selEnd) {
+            String news = olds.substring(0, selStart - 1) + olds.substring(selStart);
+            WSetInputTextAndSelection(news, selStart-1, selStart-1);
+        }
+        else {
+            String news = olds.substring(0, selStart) + olds.substring(selEnd);
+            WSetInputTextAndSelection(news, selStart, selStart);
+        }
     }
 }

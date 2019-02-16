@@ -19,6 +19,7 @@ public class MyApplication extends Application {
     int currentQueueIndex = MistakeQueueLength-1;
     MutableLiveData<Pair> currentPair = new MutableLiveData<>();
     DatabaseHelper helper = null;
+    int roundId = 0;
 
     public MyApplication() {
     }
@@ -102,6 +103,7 @@ public class MyApplication extends Application {
     }
 
     void NewRound() {
+        roundId++;
         currentQueueIndex=(currentQueueIndex+1)%MistakeQueueLength;
         if (mistakeQueue[currentQueueIndex] != null)
             currentPair.setValue(mistakeQueue[currentQueueIndex]);
