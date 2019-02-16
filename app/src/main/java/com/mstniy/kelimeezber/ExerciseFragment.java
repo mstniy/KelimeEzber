@@ -43,7 +43,6 @@ public class ExerciseFragment extends Fragment {
     FrameLayout frame;
     FlexboxLayout wLetterTable;
     boolean isMC;
-    boolean wHintTaken;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -148,7 +147,6 @@ public class ExerciseFragment extends Fragment {
         wHintView.setText("");
         userInputW.setText("");
         wLetterTable.removeAllViews();
-        wHintTaken = false;
 
         currentFwd = new Random().nextBoolean();
         labelW.setText(currentFwd?p.first:p.second);
@@ -244,12 +242,12 @@ public class ExerciseFragment extends Fragment {
 
     void WEditTextChanged() {
         if (isACorrectAnswer(userInputW.getText().toString()))
-            FinishRound(!wHintTaken);
+            FinishRound(app.mistakeQueue[app.currentQueueIndex] == null );
     }
 
     void WHintButtonClicked() {
-        wHintTaken = true;
         Pair currentPair = app.currentPair.getValue();
+        app.mistakeQueue[app.currentQueueIndex]=currentPair;
         wHintView.setText(currentFwd ? currentPair.second : currentPair.first);
     }
 }
