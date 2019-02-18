@@ -30,7 +30,7 @@ public class ExerciseFragment extends Fragment {
 
     static final String TAG = ExerciseFragment.class.getName();
 
-    final double WRITING_HARDNESS_TRESHOLD = -0.66;
+    final double WRITING_HARDNESS_TRESHOLD = -0.34;
     final double WRITING_PROBABILITY = 0.75;
     MyApplication app;
     boolean currentFwd;
@@ -123,7 +123,6 @@ public class ExerciseFragment extends Fragment {
         if (mc == isMC)
             return ;
         frame.removeAllViews();
-        Log.d(TAG, "setMC(" + mc + ")");
         frame.addView(mc ? multipleChoiceView : writingView);
         isMC = mc;
     }
@@ -239,11 +238,10 @@ public class ExerciseFragment extends Fragment {
         final Pair currentPair = app.currentPair.getValue();
         final double oldScore = currentPair.hardness;
         double newScore = oldScore;
-        //TODO: Shall multiple choice and writing challenges affect the hardness of the word differently?
         if (pass)
-            newScore -= 0.33;
+            newScore -= isMC ? 0.33 : 1;
         else
-            newScore += 1;
+            newScore += isMC ? 1 : 0.31;
         newScore = min(newScore, 2.0);
         newScore = max(newScore, -1.33);
 
