@@ -1,9 +1,12 @@
 package com.mstniy.kelimeezber;
 
+import android.arch.lifecycle.LifecycleOwner;
+import android.arch.lifecycle.Observer;
 import android.content.Intent;
 import android.databinding.ObservableArrayList;
 import android.databinding.ObservableList;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -44,19 +47,41 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     private HashSet<Pair> mDatasetUnfiltered;
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public RecycleViewAdapter(MyApplication _app, HashSet<Pair> myDataset) {
+    public RecycleViewAdapter(MyApplication _app, HashSet<Pair> myDataset, LifecycleOwner lifecycleOwner) {
         app = _app;
         setDataset(myDataset);
+        app.sortByHardness.observe(lifecycleOwner, new Observer<Boolean>() {
+            @Override
+            public void onChanged(@Nullable Boolean sortByHardness) {
+                sortMDataset();
+                notifyDataSetChanged();
+            }
+        });
     }
 
     private void sortMDataset() {
-        Collections.sort(mDataset, new Comparator<Pair>() {
-            @Override
-            public int compare(Pair l, Pair r)
-            {
-                return SwedishLexicographicalComparator.compare(l.first, r.first);
-            }
-        });
+        boolean sortByHardness = app.sortByHardness.getValue();
+        if (sortByHardness == false) {
+            Collections.sort(mDataset, new Comparator<Pair>() {
+                @Override
+                public int compare(Pair l, Pair r) {
+                    return SwedishLexicographicalComparator.compare(l.first, r.first);
+                }
+            });
+        }
+        else {
+            Collections.sort(mDataset, new Comparator<Pair>() {
+                @Override
+                public int compare(Pair l, Pair r) {
+                    if (l.hardness < r.hardness)
+                        return 1;
+                    else if (l.hardness > r.hardness)
+                        return -1;
+                    else
+                        return 0;
+                }
+            });
+        }
     }
 
     public void setDataset(HashSet<Pair> newDataset) {
@@ -151,7 +176,7 @@ public class WordListFragment extends Fragment {
         mLayoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(mLayoutManager);
 
-        mAdapter = new RecycleViewAdapter(app, app.wlist);
+        mAdapter = new RecycleViewAdapter(app, app.wlist, this);
         mRecyclerView.setAdapter(mAdapter);
 
         app.wlistObservers.add(new Runnable() {

@@ -20,6 +20,7 @@ public class MyApplication extends Application {
     MutableLiveData<Pair> currentPair = new MutableLiveData<>();
     DatabaseHelper helper = null;
     int roundId = 0;
+    MutableLiveData<Boolean> sortByHardness = new MutableLiveData<>();
 
     public MyApplication() {
     }
@@ -27,6 +28,7 @@ public class MyApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        sortByHardness.setValue(true);
         helper = new DatabaseHelper(this);
         SyncWords();
         NewRound();
