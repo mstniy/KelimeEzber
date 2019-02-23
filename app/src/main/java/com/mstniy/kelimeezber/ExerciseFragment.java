@@ -238,9 +238,9 @@ public class ExerciseFragment extends Fragment {
         final double oldScore = currentPair.hardness;
         double newScore = oldScore;
         if (pass)
-            newScore -= isMC ? 0.33 : 0.5;
+            newScore -= isMC ? 0.3 : 0.5;
         else
-            newScore += isMC ? 0.5 : 0.33;
+            newScore += isMC ? 0.7 : 0.6;
         newScore = min(newScore, 2.0);
         newScore = max(newScore, -1.33);
 
