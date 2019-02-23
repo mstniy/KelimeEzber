@@ -22,7 +22,6 @@ import com.google.android.flexbox.FlexboxLayout;
 import java.util.HashSet;
 import java.util.Random;
 
-import static java.lang.Math.floor;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -30,8 +29,8 @@ public class ExerciseFragment extends Fragment {
 
     static final String TAG = ExerciseFragment.class.getName();
 
-    final double WRITING_HARDNESS_TRESHOLD = -0.34;
-    final double WRITING_PROBABILITY = 0.75;
+    final double MC_HARDNESS_TRESHOLD = -1.0;
+    final double WRITING_PROBABILITY = 0.33; // For easy pairs. Hards pairs always get the writing exercise.
     MyApplication app;
     boolean currentFwd;
     TextView labelMC, labelW, wHintView;
@@ -189,7 +188,7 @@ public class ExerciseFragment extends Fragment {
     void cpiChanged(Pair p) {
         if (p == null)
             return ;
-        setMC(!(p.hardness <= WRITING_HARDNESS_TRESHOLD && new Random().nextDouble() <= WRITING_PROBABILITY));
+        setMC(!(p.hardness >= MC_HARDNESS_TRESHOLD || new Random().nextDouble() <= WRITING_PROBABILITY));
         if (isMC)
             newRoundMC(p);
         else
@@ -239,9 +238,9 @@ public class ExerciseFragment extends Fragment {
         final double oldScore = currentPair.hardness;
         double newScore = oldScore;
         if (pass)
-            newScore -= isMC ? 0.33 : 1;
+            newScore -= isMC ? 0.33 : 0.5;
         else
-            newScore += isMC ? 1 : 0.31;
+            newScore += isMC ? 0.5 : 0.33;
         newScore = min(newScore, 2.0);
         newScore = max(newScore, -1.33);
 
