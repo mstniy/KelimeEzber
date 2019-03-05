@@ -273,7 +273,9 @@ public class ExerciseFragment extends Fragment {
     }
 
     void WEditTextChanged() {
-        if (isACorrectAnswer(userInputW.getText().toString()))
+        Pair p = app.currentPair.getValue();
+        String answer = currentFwd?p.second:p.first;
+        if (userInputW.getText().toString().compareTo(answer) == 0)
             FinishRound(app.mistakeQueue[app.currentQueueIndex] == null );
     }
 
