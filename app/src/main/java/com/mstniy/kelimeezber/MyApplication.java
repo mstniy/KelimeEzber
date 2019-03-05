@@ -7,6 +7,17 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.HashSet;
 
+class MistakeQueueElement {
+    Pair p = null;
+    // This counter keeps how many times the user failed on this pair (since it was introduced to the mistake queue).
+    // Passes on exercises decrease this counter (unless it was already 0), fails increase it.
+    // If this counter is 0 if and only if p==null.
+    // For example, if the user fails on a pair, it'll be "added" to the mistake queue (p set to that pair) with the counter set to 1, and it'll be shown again MistakeQueueLength rounds later.
+    // If the user passes this round, the pair is "erased" from the mistake queue (p set to null), since the counter will drop to 0.
+    // Otherwise, it stays in the mistake queue and the counter increases to 2.
+    int mistakeCnt = 0;
+}
+
 public class MyApplication extends Application {
 
     private static final String TAG = MyApplication.class.getName();
@@ -15,7 +26,11 @@ public class MyApplication extends Application {
     HashMap<String, HashSet<String>> wordTranslationsFwd = new HashMap<>();
     HashMap<String, HashSet<String>> wordTranslationsBwd = new HashMap<>();
     final int MistakeQueueLength=4;
-    Pair mistakeQueue[]=new Pair[MistakeQueueLength];
+    static final int MaxMistakeQueueCounter =3; // The maximum value of MistakeQueueElement.mistakeCnt
+    // Keeps track of hardness on the short term. When the user fails on an exercise, the relevant pair is added to the queue to be shown MistakeQueueLength rounds later.
+    // For more details, see MistakeQueueElement.
+    // If mistakeQueue[i].p == null, that spot is empty.
+    MistakeQueueElement mistakeQueue[]=new MistakeQueueElement[MistakeQueueLength];
     int currentQueueIndex = MistakeQueueLength-1;
     MutableLiveData<Pair> currentPair = new MutableLiveData<>();
     DatabaseHelper helper = null;
@@ -30,6 +45,8 @@ public class MyApplication extends Application {
         super.onCreate();
         sortByHardness.setValue(true);
         helper = new DatabaseHelper(this);
+        for (int i=0; i<MistakeQueueLength; i++)
+            mistakeQueue[i] = new MistakeQueueElement();
         SyncWords();
         NewRound();
     }
@@ -69,8 +86,10 @@ public class MyApplication extends Application {
         wordTranslationsFwd.remove(p.first);
         wordTranslationsBwd.remove(p.second);
         for (int i=0; i<MistakeQueueLength; i++)
-            if (mistakeQueue[i] == p)
-                mistakeQueue[i] = null;
+            if (mistakeQueue[i].p == p) {
+                mistakeQueue[i].p = null;
+                mistakeQueue[i].mistakeCnt = 0;
+            }
         if (currentPair.getValue() == p)
             NewRound();
         helper.removePair(p);
@@ -82,8 +101,10 @@ public class MyApplication extends Application {
         wordTranslationsFwd.clear();
         wordTranslationsBwd.clear();
         currentQueueIndex = MistakeQueueLength-1;
-        for (int i=0;i<MistakeQueueLength;i++)
-            mistakeQueue[i] = null;
+        for (int i=0;i<MistakeQueueLength;i++) {
+            mistakeQueue[i].p = null;
+            mistakeQueue[i].mistakeCnt = 0;
+        }
         currentPair.setValue(null);
 
         Pair[] pairs = helper.getPairs();
@@ -107,10 +128,9 @@ public class MyApplication extends Application {
     void NewRound() {
         roundId++;
         currentQueueIndex=(currentQueueIndex+1)%MistakeQueueLength;
-        if (mistakeQueue[currentQueueIndex] != null)
-            currentPair.setValue(mistakeQueue[currentQueueIndex]);
+        if (mistakeQueue[currentQueueIndex].p != null)
+            currentPair.setValue(mistakeQueue[currentQueueIndex].p);
         else
             currentPair.setValue(PairChooser.ChoosePairSmart(this));
-        mistakeQueue[currentQueueIndex]=null;
     }
 }

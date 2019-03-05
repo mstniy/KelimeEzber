@@ -45,6 +45,9 @@ public class ExerciseFragment extends Fragment {
     FrameLayout frame;
     FlexboxLayout wLetterTable;
     boolean isMC;
+    // If this is false, the user has failed the current exercise (for example, clicked a wrong answer for a multiple choice exercise or requested a hint for a writing exercise)
+    // Set to true at the beginning of each round.
+    boolean isPass;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -195,6 +198,7 @@ public class ExerciseFragment extends Fragment {
         if (p == null)
             return ;
         setMC(!(p.hardness >= MC_HARDNESS_TRESHOLD || new Random().nextDouble() <= WRITING_PROBABILITY));
+        isPass = true;
         if (isMC)
             newRoundMC(p);
         else
@@ -239,14 +243,29 @@ public class ExerciseFragment extends Fragment {
         }
     }
 
-    void FinishRound(boolean pass) {
+    void FinishRound() {
         final Pair currentPair = app.currentPair.getValue();
         final double oldScore = currentPair.hardness;
         double newScore = oldScore;
-        if (pass)
+        MistakeQueueElement currentMQE = app.mistakeQueue[app.currentQueueIndex];
+        if (isPass) {
             newScore -= isMC ? 0.3 : 0.5;
-        else
+            if (currentMQE.p != null) {
+                assert currentMQE.mistakeCnt > 0;
+                currentMQE.mistakeCnt--;
+                if (currentMQE.mistakeCnt == 0)
+                    currentMQE.p = null;
+            }
+        }
+        else {
             newScore += isMC ? 0.7 : 0.6;
+            if (currentMQE.p == null) {
+                assert currentMQE.mistakeCnt == 0;
+                currentMQE.p = currentPair;
+            }
+            currentMQE.mistakeCnt++;
+            currentMQE.mistakeCnt = Math.max(currentMQE.mistakeCnt, MyApplication.MaxMistakeQueueCounter);
+        }
         newScore = min(newScore, 2.0);
         newScore = max(newScore, -1.33);
 
@@ -261,11 +280,11 @@ public class ExerciseFragment extends Fragment {
         if (currentPair == null)
             return ;
 	    if (isACorrectAnswer(button.getText().toString()))
-            FinishRound(app.mistakeQueue[app.currentQueueIndex] == null);
+            FinishRound();
         else
         {
             //cout << "Incorrect!" << endl;
-            app.mistakeQueue[app.currentQueueIndex]=currentPair;
+            isPass = false;
             for (int i=0;i<4;i++)
                 if (isACorrectAnswer(mcvButtons[i].getText().toString()))
                     ChangeColorOfButton(mcvButtons[i], true);
@@ -276,12 +295,12 @@ public class ExerciseFragment extends Fragment {
         Pair p = app.currentPair.getValue();
         String answer = currentFwd?p.second:p.first;
         if (userInputW.getText().toString().compareTo(answer) == 0)
-            FinishRound(app.mistakeQueue[app.currentQueueIndex] == null );
+            FinishRound();
     }
 
     void WHintButtonClicked() {
         Pair currentPair = app.currentPair.getValue();
-        app.mistakeQueue[app.currentQueueIndex]=currentPair;
+        isPass = false;
         wHintView.setText(currentFwd ? currentPair.second : currentPair.first);
     }
 
