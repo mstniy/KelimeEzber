@@ -19,6 +19,8 @@ import android.widget.TextView;
 
 import com.google.android.flexbox.FlexboxLayout;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Random;
 
@@ -164,8 +166,9 @@ public class ExerciseFragment extends Fragment {
         for (String word : currentFwd?app.wordTranslationsFwd.get(p.first):app.wordTranslationsBwd.get(p.second))
             for (int i=0; i<word.length(); i++)
                 choices.add(word.charAt(i));
-        //TODO: Add the buttons in a random order here. Or maybe call the addView method with a (random) index?
-        for (Character ch : choices) {
+        ArrayList<Character> choicesArray = new ArrayList<>(choices);
+        Collections.shuffle(choicesArray);
+        for (Character ch : choicesArray) {
             TextView b = new TextView(getContext());
             b.setText(String.valueOf(ch));
             b.setBackgroundResource(android.R.drawable.btn_default);
