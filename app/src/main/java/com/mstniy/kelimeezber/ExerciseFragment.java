@@ -159,13 +159,16 @@ public class ExerciseFragment extends Fragment {
 
         currentFwd = new Random().nextBoolean();
         labelW.setText(currentFwd?p.first:p.second);
-        HashSet<Character> choices = new HashSet<>();
         //TODO: Maybe have a dedicated button for space? We also need to check if the word is suitable for writing challenge (it may be too long)
         //TODO: And also, if the words has a lot of translations, trying to add all of their letters on the screen will be a mess.
         //TODO: And maybe add some "trap" letters for extra difficulty?
-        for (String word : currentFwd?app.wordTranslationsFwd.get(p.first):app.wordTranslationsBwd.get(p.second))
+        HashSet<Character> choices = new HashSet<>();
+        if (true) // Limit the scope of *word*
+        {
+            String word = currentFwd?p.second:p.first;
             for (int i=0; i<word.length(); i++)
                 choices.add(word.charAt(i));
+        }
         ArrayList<Character> choicesArray = new ArrayList<>(choices);
         Collections.shuffle(choicesArray);
         for (Character ch : choicesArray) {
