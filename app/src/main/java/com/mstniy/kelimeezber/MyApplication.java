@@ -7,6 +7,9 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 class MistakeQueueElement {
     Pair p = null;
     // This counter keeps how many times the user failed on this pair (since it was introduced to the mistake queue).
@@ -132,5 +135,36 @@ public class MyApplication extends Application {
             currentPair.setValue(mistakeQueue[currentQueueIndex].p);
         else
             currentPair.setValue(PairChooser.ChoosePairSmart(this));
+    }
+
+    void FinishRound(boolean isMC, boolean isPass) {
+        final Pair currentPairVal = currentPair.getValue();
+        final double oldScore = currentPairVal.hardness;
+        double newScore = oldScore;
+        MistakeQueueElement currentMQE = mistakeQueue[currentQueueIndex];
+        if (isPass) {
+            newScore -= isMC ? 0.3 : 0.5;
+            if (currentMQE.p != null) {
+                assert currentMQE.mistakeCnt > 0;
+                currentMQE.mistakeCnt--;
+                if (currentMQE.mistakeCnt == 0)
+                    currentMQE.p = null;
+            }
+        }
+        else {
+            newScore += isMC ? 0.7 : 0.6;
+            if (currentMQE.p == null) {
+                assert currentMQE.mistakeCnt == 0;
+                currentMQE.p = currentPairVal;
+            }
+            currentMQE.mistakeCnt++;
+            currentMQE.mistakeCnt = Math.max(currentMQE.mistakeCnt, MyApplication.MaxMistakeQueueCounter);
+        }
+        newScore = min(newScore, 2.0);
+        newScore = max(newScore, -1.33);
+
+        currentPairVal.hardness = newScore; // Update the score of the current word
+        HardnessChanged(currentPairVal);
+        NewRound();
     }
 }

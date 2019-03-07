@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.FragmentTransaction;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -24,93 +25,27 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Random;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-
 public class ExerciseFragment extends Fragment {
 
     static final String TAG = ExerciseFragment.class.getName();
 
     final double FORWARD_PROBABILITY = 0.33;
     MyApplication app;
-    boolean currentFwd;
-    TextView labelMC, labelW, wHintView;
-    EditText userInputW;
-    Button mcvButtons[] = new Button[4];
     View rootView;
-    View multipleChoiceView;
-    View writingView;
-    Button wHintButton, wBackspace;
+    MCFragment multipleChoiceFragment;
+    WritingFragment writingFragment;
     FrameLayout frame;
-    FlexboxLayout wLetterTable;
     boolean isMC;
-    // If this is false, the user has failed the current exercise (for example, clicked a wrong answer for a multiple choice exercise or requested a hint for a writing exercise)
-    // Set to true at the beginning of each round.
-    boolean isPass;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        app = (MyApplication) getContext().getApplicationContext();
         rootView = inflater.inflate(R.layout.exercise_root, container, false);
         frame = rootView.findViewById(R.id.frame);
-        multipleChoiceView = inflater.inflate(R.layout.exercise_multiple_choice, frame, false);
-        frame.addView(multipleChoiceView); // Settings attachToRoot=true in the call to *inflate* above is NOT the same thing.
-        isMC = true;
-        writingView = inflater.inflate(R.layout.exercise_writing, frame, false);
-
-        app = (MyApplication) getContext().getApplicationContext();
-
-        labelMC = multipleChoiceView.findViewById(R.id.label);
-        mcvButtons[0] = multipleChoiceView.findViewById(R.id.button0);
-        mcvButtons[1] = multipleChoiceView.findViewById(R.id.button1);
-        mcvButtons[2] = multipleChoiceView.findViewById(R.id.button2);
-        mcvButtons[3] = multipleChoiceView.findViewById(R.id.button3);
-        for (int i=0;i<4;i++)
-            mcvButtons[i].setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    MCVButtonClicked((Button)v);
-                }
-            });
-
-        labelW = writingView.findViewById(R.id.label);
-        wHintView = writingView.findViewById(R.id.hint_view);
-        wHintButton = writingView.findViewById(R.id.hint_button);
-
-        wHintButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                WHintButtonClicked();
-            }
-        });
-
-        wBackspace = writingView.findViewById(R.id.backspace_button);
-        wBackspace.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                WBackspaceClicked();
-            }
-        });
-
-        userInputW = writingView.findViewById(R.id.user_input);
-
-        userInputW.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                WEditTextChanged();
-            }
-        });
-
-        wLetterTable = writingView.findViewById(R.id.letter_table);
+        multipleChoiceFragment = new MCFragment();
+        writingFragment = new WritingFragment();
 
         app.currentPair.observe(this, new Observer<Pair>() {
             @Override
@@ -123,201 +58,22 @@ public class ExerciseFragment extends Fragment {
     }
 
     void setMC(boolean mc) {
-        if (mc == isMC)
-            return ;
-        frame.removeAllViews();
-        frame.addView(mc ? multipleChoiceView : writingView);
         isMC = mc;
-    }
-
-    void newRoundMC(Pair p) {
-        //Clear the view first (we have the old exercise on it)
-        for (int i=0;i<4;i++)
-            ChangeColorOfButton(mcvButtons[i], false);
-        labelMC.setText("");
-        for (int i=0; i<4; i++)
-            mcvButtons[i].setText("");
-
-        final int answer=new Random().nextInt(4);
-        labelMC.setText(currentFwd?p.first:p.second);
-        for (int i=0;i<4;i++)
-        {
-            if (i == answer)
-                mcvButtons[i].setText(currentFwd ? p.second : p.first);
-            else {
-                final Pair p2 = PairChooser.ChoosePairRandom(app);
-                mcvButtons[i].setText(currentFwd?p2.second:p2.first);
-            }
-        }
-    }
-
-    void newRoundW(Pair p) {
-        // Clear the view first (we have the old exercise on it)
-        labelW.setText("");
-        wHintView.setText("");
-        userInputW.setText("");
-        wLetterTable.removeAllViews();
-
-        labelW.setText(currentFwd?p.first:p.second);
-        //TODO: Maybe have a dedicated button for space? We also need to check if the word is suitable for writing challenge (it may be too long)
-        //TODO: And also, if the words has a lot of translations, trying to add all of their letters on the screen will be a mess.
-        //TODO: And maybe add some "trap" letters for extra difficulty?
-        HashSet<Character> choices = new HashSet<>();
-        if (true) // Limit the scope of *word*
-        {
-            String word = currentFwd?p.second:p.first;
-            for (int i=0; i<word.length(); i++)
-                choices.add(word.charAt(i));
-        }
-        ArrayList<Character> choicesArray = new ArrayList<>(choices);
-        Collections.shuffle(choicesArray);
-        for (Character ch : choicesArray) {
-            TextView b = new TextView(getContext());
-            b.setText(String.valueOf(ch));
-            b.setBackgroundResource(android.R.drawable.btn_default);
-            b.setTextSize(20);
-            b.setGravity(Gravity.CENTER);
-            //b.setMinWidth(75);
-            b.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    WButtonClicked((TextView)v);
-                }
-            });
-            final float factor = getContext().getResources().getDisplayMetrics().density;
-            Log.d(TAG, String.valueOf(factor));
-            ViewGroup.LayoutParams lp = new FrameLayout.LayoutParams((int)(59*factor), (int)(59*factor));
-            wLetterTable.addView(b, lp);
-        }
+        getChildFragmentManager().beginTransaction().replace(R.id.frame, mc ? multipleChoiceFragment : writingFragment).commit();
+        getChildFragmentManager().executePendingTransactions();
     }
 
     void cpiChanged(Pair p) {
         if (p == null)
             return ;
-        isPass = true;
-        currentFwd = (new Random().nextDouble() <= FORWARD_PROBABILITY);
+        boolean currentFwd = (new Random().nextDouble() <= FORWARD_PROBABILITY);
         if (currentFwd) {
             setMC(true);
-            newRoundMC(p);
+            multipleChoiceFragment.newRoundMC(p, currentFwd);
         }
         else {
             setMC(false);
-            newRoundW(p);
-        }
-    }
-
-    void ChangeColorOfButton(Button button, boolean highlight)
-    {
-        if (highlight)
-            button.setBackgroundColor(Color.rgb(100, 255, 100));
-        else
-            button.setBackgroundResource(android.R.drawable.btn_default);
-    }
-
-    boolean isACorrectAnswer(String s) {
-        if (currentFwd)
-            return app.wordTranslationsFwd.get(app.currentPair.getValue().first.toString()).contains(s);
-        else
-            return app.wordTranslationsBwd.get(app.currentPair.getValue().second.toString()).contains(s);
-    }
-
-    void WSetInputTextAndSelection(String text, int selStart, int selEnd) {
-        final int roundIdBefore = app.roundId;
-        userInputW.setText(text);
-        //WEditTextChanged(); // Android calls this automatically
-        if (app.roundId != roundIdBefore) // Changing the content of the user input may change the round (if the new value is a correct answer)
-            return ;
-        userInputW.setSelection(selStart, selEnd);
-    }
-
-    void WButtonClicked(TextView button) {
-        //userInputW.append(button.getText());
-        final int selStart = userInputW.getSelectionStart();
-        final int selEnd = userInputW.getSelectionEnd();
-        String olds = userInputW.getText().toString();
-        String news = olds.substring(0, selStart) + button.getText() + olds.substring(selEnd);
-
-        if (selStart != selEnd)
-            WSetInputTextAndSelection(news, selStart, selStart+1);
-        else {
-            WSetInputTextAndSelection(news, selStart + 1, selStart+1);
-        }
-    }
-
-    void FinishRound() {
-        final Pair currentPair = app.currentPair.getValue();
-        final double oldScore = currentPair.hardness;
-        double newScore = oldScore;
-        MistakeQueueElement currentMQE = app.mistakeQueue[app.currentQueueIndex];
-        if (isPass) {
-            newScore -= isMC ? 0.3 : 0.5;
-            if (currentMQE.p != null) {
-                assert currentMQE.mistakeCnt > 0;
-                currentMQE.mistakeCnt--;
-                if (currentMQE.mistakeCnt == 0)
-                    currentMQE.p = null;
-            }
-        }
-        else {
-            newScore += isMC ? 0.7 : 0.6;
-            if (currentMQE.p == null) {
-                assert currentMQE.mistakeCnt == 0;
-                currentMQE.p = currentPair;
-            }
-            currentMQE.mistakeCnt++;
-            currentMQE.mistakeCnt = Math.max(currentMQE.mistakeCnt, MyApplication.MaxMistakeQueueCounter);
-        }
-        newScore = min(newScore, 2.0);
-        newScore = max(newScore, -1.33);
-
-        currentPair.hardness = newScore; // Update the score of the current word
-        app.HardnessChanged(currentPair);
-        app.NewRound();
-    }
-
-    void MCVButtonClicked(Button button)
-    {
-        final Pair currentPair = app.currentPair.getValue();
-        if (currentPair == null)
-            return ;
-	    if (isACorrectAnswer(button.getText().toString()))
-            FinishRound();
-        else
-        {
-            //cout << "Incorrect!" << endl;
-            isPass = false;
-            for (int i=0;i<4;i++)
-                if (isACorrectAnswer(mcvButtons[i].getText().toString()))
-                    ChangeColorOfButton(mcvButtons[i], true);
-        }
-    }
-
-    void WEditTextChanged() {
-        Pair p = app.currentPair.getValue();
-        String answer = currentFwd?p.second:p.first;
-        if (userInputW.getText().toString().compareTo(answer) == 0)
-            FinishRound();
-    }
-
-    void WHintButtonClicked() {
-        Pair currentPair = app.currentPair.getValue();
-        isPass = false;
-        wHintView.setText(currentFwd ? currentPair.second : currentPair.first);
-    }
-
-    void WBackspaceClicked() {
-        final int selStart = userInputW.getSelectionStart();
-        final int selEnd = userInputW.getSelectionEnd();
-        if (selStart == selEnd && selStart == 0)
-            return ;
-        String olds = userInputW.getText().toString();
-        if (selStart == selEnd) {
-            String news = olds.substring(0, selStart - 1) + olds.substring(selStart);
-            WSetInputTextAndSelection(news, selStart-1, selStart-1);
-        }
-        else {
-            String news = olds.substring(0, selStart) + olds.substring(selEnd);
-            WSetInputTextAndSelection(news, selStart, selStart);
+            writingFragment.newRoundW(p, currentFwd);
         }
     }
 }
