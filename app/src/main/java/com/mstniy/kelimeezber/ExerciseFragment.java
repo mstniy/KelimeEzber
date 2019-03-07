@@ -31,8 +31,7 @@ public class ExerciseFragment extends Fragment {
 
     static final String TAG = ExerciseFragment.class.getName();
 
-    final double MC_HARDNESS_TRESHOLD = -1.0;
-    final double WRITING_PROBABILITY = 0.33; // For easy pairs. Hards pairs always get the writing exercise.
+    final double FORWARD_PROBABILITY = 0.33;
     MyApplication app;
     boolean currentFwd;
     TextView labelMC, labelW, wHintView;
@@ -139,7 +138,6 @@ public class ExerciseFragment extends Fragment {
         for (int i=0; i<4; i++)
             mcvButtons[i].setText("");
 
-        currentFwd = new Random().nextBoolean();
         final int answer=new Random().nextInt(4);
         labelMC.setText(currentFwd?p.first:p.second);
         for (int i=0;i<4;i++)
@@ -160,7 +158,6 @@ public class ExerciseFragment extends Fragment {
         userInputW.setText("");
         wLetterTable.removeAllViews();
 
-        currentFwd = new Random().nextBoolean();
         labelW.setText(currentFwd?p.first:p.second);
         //TODO: Maybe have a dedicated button for space? We also need to check if the word is suitable for writing challenge (it may be too long)
         //TODO: And also, if the words has a lot of translations, trying to add all of their letters on the screen will be a mess.
@@ -197,12 +194,16 @@ public class ExerciseFragment extends Fragment {
     void cpiChanged(Pair p) {
         if (p == null)
             return ;
-        setMC(!(p.hardness >= MC_HARDNESS_TRESHOLD || new Random().nextDouble() <= WRITING_PROBABILITY));
         isPass = true;
-        if (isMC)
+        currentFwd = (new Random().nextDouble() <= FORWARD_PROBABILITY);
+        if (currentFwd) {
+            setMC(true);
             newRoundMC(p);
-        else
+        }
+        else {
+            setMC(false);
             newRoundW(p);
+        }
     }
 
     void ChangeColorOfButton(Button button, boolean highlight)
