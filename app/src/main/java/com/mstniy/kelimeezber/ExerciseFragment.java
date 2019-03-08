@@ -46,6 +46,9 @@ public class ExerciseFragment extends Fragment {
         frame = rootView.findViewById(R.id.frame);
         multipleChoiceFragment = new MCFragment();
         writingFragment = new WritingFragment();
+        isMC = true;
+        getChildFragmentManager().beginTransaction().replace(R.id.frame, multipleChoiceFragment).commit();
+        getChildFragmentManager().executePendingTransactions();
 
         app.currentPair.observe(this, new Observer<Pair>() {
             @Override
@@ -58,6 +61,8 @@ public class ExerciseFragment extends Fragment {
     }
 
     void setMC(boolean mc) {
+        if (mc == isMC)
+            return ;
         isMC = mc;
         getChildFragmentManager().beginTransaction().replace(R.id.frame, mc ? multipleChoiceFragment : writingFragment).commit();
         getChildFragmentManager().executePendingTransactions();
