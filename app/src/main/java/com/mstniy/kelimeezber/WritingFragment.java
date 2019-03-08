@@ -1,12 +1,9 @@
 package com.mstniy.kelimeezber;
 
-import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,10 +26,10 @@ public class WritingFragment extends Fragment {
 
     MyApplication app;
     boolean currentFwd;
-    TextView labelW, wHintView;
-    EditText userInputW;
-    Button wHintButton, wBackspace;
-    FlexboxLayout wLetterTable;
+    TextView label, hintView;
+    EditText userInput;
+    Button hintButton, backspace;
+    FlexboxLayout letterTable;
     // If this is false, the user has failed the current exercise (for example, clicked a wrong answer for a multiple choice exercise or requested a hint for a writing exercise)
     // Set to true at the beginning of each round.
     boolean isPass;
@@ -48,28 +45,28 @@ public class WritingFragment extends Fragment {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_writing, container, false);
 
-        labelW = rootView.findViewById(R.id.labelW);
-        wHintView = rootView.findViewById(R.id.hint_view);
-        wHintButton = rootView.findViewById(R.id.hint_button);
+        label = rootView.findViewById(R.id.label);
+        hintView = rootView.findViewById(R.id.hint_view);
+        hintButton = rootView.findViewById(R.id.hint_button);
 
-        wHintButton.setOnClickListener(new View.OnClickListener() {
+        hintButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                WHintButtonClicked();
+                HintButtonClicked();
             }
         });
 
-        wBackspace = rootView.findViewById(R.id.backspace_button);
-        wBackspace.setOnClickListener(new View.OnClickListener() {
+        backspace = rootView.findViewById(R.id.backspace_button);
+        backspace.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                WBackspaceClicked();
+                BackspaceClicked();
             }
         });
 
-        userInputW = rootView.findViewById(R.id.user_input);
+        userInput = rootView.findViewById(R.id.user_input);
 
-        userInputW.addTextChangedListener(new TextWatcher() {
+        userInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -80,11 +77,11 @@ public class WritingFragment extends Fragment {
 
             @Override
             public void afterTextChanged(Editable s) {
-                WEditTextChanged();
+                EditTextChanged();
             }
         });
 
-        wLetterTable = rootView.findViewById(R.id.letter_table);
+        letterTable = rootView.findViewById(R.id.letter_table);
 
         return rootView;
     }
@@ -93,12 +90,12 @@ public class WritingFragment extends Fragment {
         isPass = true;
         currentFwd = _currentFwd;
         // Clear the view first (we have the old exercise on it)
-        labelW.setText("");
-        wHintView.setText("");
-        userInputW.setText("");
-        wLetterTable.removeAllViews();
+        label.setText("");
+        hintView.setText("");
+        userInput.setText("");
+        letterTable.removeAllViews();
 
-        labelW.setText(currentFwd?p.first:p.second);
+        label.setText(currentFwd?p.first:p.second);
         //TODO: Maybe have a dedicated button for space? We also need to check if the word is suitable for writing challenge (it may be too long)
         //TODO: And also, if the words has a lot of translations, trying to add all of their letters on the screen will be a mess.
         //TODO: And maybe add some "trap" letters for extra difficulty?
@@ -121,64 +118,64 @@ public class WritingFragment extends Fragment {
             b.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    WButtonClicked((TextView)v);
+                    ButtonClicked((TextView)v);
                 }
             });
             final float factor = getContext().getResources().getDisplayMetrics().density;
             ViewGroup.LayoutParams lp = new FrameLayout.LayoutParams((int)(59*factor), (int)(59*factor));
-            wLetterTable.addView(b, lp);
+            letterTable.addView(b, lp);
         }
     }
 
-    void WSetInputTextAndSelection(String text, int selStart, int selEnd) {
+    void SetInputTextAndSelection(String text, int selStart, int selEnd) {
         final int roundIdBefore = app.roundId;
-        userInputW.setText(text);
-        //WEditTextChanged(); // Android calls this automatically
+        userInput.setText(text);
+        //EditTextChanged(); // Android calls this automatically
         if (app.roundId != roundIdBefore) // Changing the content of the user input may change the round (if the new value is a correct answer)
             return ;
-        userInputW.setSelection(selStart, selEnd);
+        userInput.setSelection(selStart, selEnd);
     }
 
-    void WButtonClicked(TextView button) {
-        //userInputW.append(button.getText());
-        final int selStart = userInputW.getSelectionStart();
-        final int selEnd = userInputW.getSelectionEnd();
-        String olds = userInputW.getText().toString();
+    void ButtonClicked(TextView button) {
+        //userInput.append(button.getText());
+        final int selStart = userInput.getSelectionStart();
+        final int selEnd = userInput.getSelectionEnd();
+        String olds = userInput.getText().toString();
         String news = olds.substring(0, selStart) + button.getText() + olds.substring(selEnd);
 
         if (selStart != selEnd)
-            WSetInputTextAndSelection(news, selStart, selStart+1);
+            SetInputTextAndSelection(news, selStart, selStart+1);
         else {
-            WSetInputTextAndSelection(news, selStart + 1, selStart+1);
+            SetInputTextAndSelection(news, selStart + 1, selStart+1);
         }
     }
 
-    void WEditTextChanged() {
+    void EditTextChanged() {
         Pair p = app.currentPair.getValue();
         String answer = currentFwd?p.second:p.first;
-        if (userInputW.getText().toString().compareTo(answer) == 0)
+        if (userInput.getText().toString().compareTo(answer) == 0)
             app.FinishRound(false, isPass);
     }
 
-    void WHintButtonClicked() {
+    void HintButtonClicked() {
         Pair currentPair = app.currentPair.getValue();
         isPass = false;
-        wHintView.setText(currentFwd ? currentPair.second : currentPair.first);
+        hintView.setText(currentFwd ? currentPair.second : currentPair.first);
     }
 
-    void WBackspaceClicked() {
-        final int selStart = userInputW.getSelectionStart();
-        final int selEnd = userInputW.getSelectionEnd();
+    void BackspaceClicked() {
+        final int selStart = userInput.getSelectionStart();
+        final int selEnd = userInput.getSelectionEnd();
         if (selStart == selEnd && selStart == 0)
             return ;
-        String olds = userInputW.getText().toString();
+        String olds = userInput.getText().toString();
         if (selStart == selEnd) {
             String news = olds.substring(0, selStart - 1) + olds.substring(selStart);
-            WSetInputTextAndSelection(news, selStart-1, selStart-1);
+            SetInputTextAndSelection(news, selStart-1, selStart-1);
         }
         else {
             String news = olds.substring(0, selStart) + olds.substring(selEnd);
-            WSetInputTextAndSelection(news, selStart, selStart);
+            SetInputTextAndSelection(news, selStart, selStart);
         }
     }
 }

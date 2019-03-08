@@ -1,28 +1,14 @@
 package com.mstniy.kelimeezber;
 
 import android.arch.lifecycle.Observer;
-import android.graphics.Color;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.support.v4.app.FragmentTransaction;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 
-import com.google.android.flexbox.FlexboxLayout;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Random;
 
 public class ExerciseFragment extends Fragment {
@@ -74,7 +60,7 @@ public class ExerciseFragment extends Fragment {
         boolean currentFwd = (new Random().nextDouble() <= FORWARD_PROBABILITY);
         if (currentFwd) {
             setMC(true);
-            multipleChoiceFragment.newRoundMC(p, currentFwd);
+            multipleChoiceFragment.newRound(p, currentFwd);
         }
         else {
             setMC(false);

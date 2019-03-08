@@ -1,11 +1,8 @@
 package com.mstniy.kelimeezber;
 
-import android.content.Context;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,8 +19,8 @@ public class MCFragment extends Fragment {
 
     MyApplication app;
     boolean currentFwd;
-    TextView labelMC;
-    Button mcvButtons[] = new Button[4];
+    TextView label;
+    Button buttons[] = new Button[4];
     // If this is false, the user has failed the current exercise (for example, clicked a wrong answer for a multiple choice exercise or requested a hint for a writing exercise)
     // Set to true at the beginning of each round.
     boolean isPass;
@@ -41,16 +38,16 @@ public class MCFragment extends Fragment {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_mc, container, false);
 
-        labelMC = rootView.findViewById(R.id.labelMC);
-        mcvButtons[0] = rootView.findViewById(R.id.button0);
-        mcvButtons[1] = rootView.findViewById(R.id.button1);
-        mcvButtons[2] = rootView.findViewById(R.id.button2);
-        mcvButtons[3] = rootView.findViewById(R.id.button3);
+        label = rootView.findViewById(R.id.label);
+        buttons[0] = rootView.findViewById(R.id.button0);
+        buttons[1] = rootView.findViewById(R.id.button1);
+        buttons[2] = rootView.findViewById(R.id.button2);
+        buttons[3] = rootView.findViewById(R.id.button3);
         for (int i=0;i<4;i++) {
-            mcvButtons[i].setOnClickListener(new View.OnClickListener() {
+            buttons[i].setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    MCVButtonClicked((Button) v);
+                    buttonClicked((Button) v);
                 }
             });
         }
@@ -58,25 +55,25 @@ public class MCFragment extends Fragment {
         return rootView;
     }
 
-    void newRoundMC(Pair p, boolean _currentFwd) {
+    void newRound(Pair p, boolean _currentFwd) {
         currentFwd = _currentFwd;
         isPass = true;
         //Clear the view first (we have the old exercise on it)
         for (int i=0;i<4;i++)
-            ChangeColorOfButton(mcvButtons[i], false);
-        labelMC.setText("");
+            ChangeColorOfButton(buttons[i], false);
+        label.setText("");
         for (int i=0; i<4; i++)
-            mcvButtons[i].setText("");
+            buttons[i].setText("");
 
         final int answer=new Random().nextInt(4);
-        labelMC.setText(currentFwd?p.first:p.second);
+        label.setText(currentFwd?p.first:p.second);
         for (int i=0;i<4;i++)
         {
             if (i == answer)
-                mcvButtons[i].setText(currentFwd ? p.second : p.first);
+                buttons[i].setText(currentFwd ? p.second : p.first);
             else {
                 final Pair p2 = PairChooser.ChoosePairRandom(app);
-                mcvButtons[i].setText(currentFwd?p2.second:p2.first);
+                buttons[i].setText(currentFwd?p2.second:p2.first);
             }
         }
     }
@@ -95,7 +92,7 @@ public class MCFragment extends Fragment {
             return app.wordTranslationsBwd.get(app.currentPair.getValue().second.toString()).contains(s);
     }
 
-    void MCVButtonClicked(Button button)
+    void buttonClicked(Button button)
     {
         final Pair currentPair = app.currentPair.getValue();
         if (currentPair == null)
@@ -106,8 +103,8 @@ public class MCFragment extends Fragment {
         {
             isPass = false;
             for (int i=0;i<4;i++)
-                if (isACorrectAnswer(mcvButtons[i].getText().toString()))
-                    ChangeColorOfButton(mcvButtons[i], true);
+                if (isACorrectAnswer(buttons[i].getText().toString()))
+                    ChangeColorOfButton(buttons[i], true);
         }
     }
 }
