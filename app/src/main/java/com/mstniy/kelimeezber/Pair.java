@@ -6,10 +6,12 @@ class Pair
     public String first;
     public String second;
     public double hardness;
-    public Pair(long _id, String _first, String _second, double _hardness) {
+    public int period;
+    public Pair(long _id, String _first, String _second, double _hardness, int _period) {
         id = _id;
         first = _first;
         second = _second;
         hardness = _hardness;
+        period = _period;
     }
 };

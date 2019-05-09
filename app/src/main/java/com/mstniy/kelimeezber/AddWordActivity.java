@@ -31,7 +31,7 @@ public class AddWordActivity extends AppCompatActivity {
         String second = edit1.getText().toString();
         if (first.length() == 0 || second.length() == 0)
             return ;
-        ((MyApplication)getApplicationContext()).AddPair(new Pair(0, first, second, 0)); // AddPair will set proper id
+        ((MyApplication)getApplicationContext()).AddPair(new Pair(0, first, second, 0, 1)); // AddPair will set proper id
         finish();
     }
 }

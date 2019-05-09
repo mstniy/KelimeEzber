@@ -10,31 +10,18 @@ import java.util.HashSet;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
-class MistakeQueueElement {
-    Pair p = null;
-    // This counter keeps how many times the user failed on this pair (since it was introduced to the mistake queue).
-    // Passes on exercises decrease this counter (unless it was already 0), fails increase it.
-    // If this counter is 0 if and only if p==null.
-    // For example, if the user fails on a pair, it'll be "added" to the mistake queue (p set to that pair) with the counter set to 1, and it'll be shown again MistakeQueueLength rounds later.
-    // If the user passes this round, the pair is "erased" from the mistake queue (p set to null), since the counter will drop to 0.
-    // Otherwise, it stays in the mistake queue and the counter increases to 2.
-    int mistakeCnt = 0;
-}
-
 public class MyApplication extends Application {
 
     private static final String TAG = MyApplication.class.getName();
+
     HashSet<Pair> wlist = new HashSet<>();
-    HashSet<Runnable> wlistObservers = new HashSet<>(); // Java (or Android or JavaRX) doesn't have an ObservableSet, so we implement it by ourselves.
+    HashSet<Runnable> wlistObservers = new HashSet<>(); // Java (or Android or JavaRX) doesn't have an ObservableSet, so we implement it ourselves.
     HashMap<String, HashSet<String>> wordTranslationsFwd = new HashMap<>();
     HashMap<String, HashSet<String>> wordTranslationsBwd = new HashMap<>();
-    final int MistakeQueueLength=4;
-    static final int MaxMistakeQueueCounter =3; // The maximum value of MistakeQueueElement.mistakeCnt
-    // Keeps track of hardness on the short term. When the user fails on an exercise, the relevant pair is added to the queue to be shown MistakeQueueLength rounds later.
-    // For more details, see MistakeQueueElement.
-    // If mistakeQueue[i].p == null, that spot is empty.
-    MistakeQueueElement mistakeQueue[]=new MistakeQueueElement[MistakeQueueLength];
-    int currentQueueIndex = MistakeQueueLength-1;
+    static final int MaxWordPeriod = 64;
+    // If pairQueue[i].p == null, that spot is empty.
+    Pair[] pairQueue;
+    int currentQueueIndex;
     MutableLiveData<Pair> currentPair = new MutableLiveData<>();
     DatabaseHelper helper = null;
     int roundId = 0;
@@ -48,10 +35,8 @@ public class MyApplication extends Application {
         super.onCreate();
         sortByHardness.setValue(true);
         helper = new DatabaseHelper(this);
-        for (int i=0; i<MistakeQueueLength; i++)
-            mistakeQueue[i] = new MistakeQueueElement();
-        SyncWords();
-        NewRound();
+        SyncStateWithDB();
+        StartRound();
     }
 
     private void NotifyWListObservers() {
@@ -59,7 +44,7 @@ public class MyApplication extends Application {
             r.run();
     }
 
-    void HardnessChanged(Pair p) {
+    void HardnessPeriodChanged(Pair p) {
         helper.updatePair(p);
         NotifyWListObservers(); // TODO: This isn't the most efficient way to handle a single hardness value change.
     }
@@ -84,87 +69,124 @@ public class MyApplication extends Application {
     }
 
     void RemovePair(Pair p) {
+        for (int i=0; i<pairQueue.length; i++)
+            if (pairQueue[i] == p) {
+                pairQueue[i] = null; // We can't use InsertToPairQueue here because it'd just skip currentQueueIndex since it's not null. So we have to change the pairQueue and reflect the change to the DB manually.
+                helper.setPairQueueElement(i, (long)0);
+            }
         wlist.remove(p);
         NotifyWListObservers();
         wordTranslationsFwd.remove(p.first);
         wordTranslationsBwd.remove(p.second);
-        for (int i=0; i<MistakeQueueLength; i++)
-            if (mistakeQueue[i].p == p) {
-                mistakeQueue[i].p = null;
-                mistakeQueue[i].mistakeCnt = 0;
-            }
-        if (currentPair.getValue() == p)
-            NewRound();
         helper.removePair(p);
+        if (currentPair.getValue() == p)
+            StartRound();
     }
 
-    boolean SyncWords()
+    boolean SyncStateWithDB()
     {
         wlist.clear();
         wordTranslationsFwd.clear();
         wordTranslationsBwd.clear();
-        currentQueueIndex = MistakeQueueLength-1;
-        for (int i=0;i<MistakeQueueLength;i++) {
-            mistakeQueue[i].p = null;
-            mistakeQueue[i].mistakeCnt = 0;
-        }
         currentPair.setValue(null);
 
         Pair[] pairs = helper.getPairs();
-        if (pairs.length == 0) { // We just created the db, add the mock words
+        if (pairs.length == 0) { // We just created the db, add some mock words
             pairs = new Pair[5];
-            pairs[0] = new Pair(0, "sedan", "since", 0); // AddPair will set proper id's once these Pair's are added to the db.
-            pairs[1] = new Pair(0, "annars", "otherwise", 0);
-            pairs[2] = new Pair(0, "även om", "even if", 0);
-            pairs[3] = new Pair(0, "snygg", "nice", 0);
-            pairs[4] = new Pair(0, "trevlig", "nice", 0);
+            pairs[0] = new Pair(0, "sedan", "since", 0, 0); // AddPair will set proper id's once these Pair's are added to the db.
+            pairs[1] = new Pair(0, "annars", "otherwise", 0, 0);
+            pairs[2] = new Pair(0, "även om", "even if", 0, 0);
+            pairs[3] = new Pair(0, "snygg", "nice", 0, 0);
+            pairs[4] = new Pair(0, "trevlig", "nice", 0, 0);
             for (Pair p : pairs)
                 AddPair(p); // AddPair also adds them to the DB
         }
-        else {
-            for (Pair p : pairs)
-                AddPairToAppState(p);
+        HashMap<Long, Pair> pairReverseLookup = new HashMap<>();
+        for (Pair p : pairs) {
+            AddPairToAppState(p);
+            pairReverseLookup.put(p.id, p);
         }
+        long[] pairQueueIds = helper.getPairQueueIds();
+        Log.d(TAG, "Length of pairQueueIds: " + pairQueueIds.length);
+        pairQueue = new Pair[pairQueueIds.length];
+        for (int i=0; i<pairQueueIds.length; i++) {
+            if (pairQueueIds[i] != 0) {
+                pairQueue[i] = pairReverseLookup.get(pairQueueIds[i]);
+                if (pairQueue[i] == null)
+                    throw new RuntimeException("Invalid pairQueueId in the pair queue!");
+            }
+            else
+                pairQueue[i] = null;
+        }
+        currentQueueIndex = helper.getCurrentQueueIndex();
         return true;
     }
 
-    void NewRound() {
-        roundId++;
-        currentQueueIndex=(currentQueueIndex+1)%MistakeQueueLength;
-        if (mistakeQueue[currentQueueIndex].p != null)
-            currentPair.setValue(mistakeQueue[currentQueueIndex].p);
-        else
-            currentPair.setValue(PairChooser.ChoosePairSmart(this));
+    void StartRound() {
+        if (pairQueue[currentQueueIndex] == null)
+            InsertToPairQueue(currentQueueIndex, PairChooser.ChoosePairSmart(this));
+
+        currentPair.setValue(pairQueue[currentQueueIndex]);
+
+        Log.d(TAG, "currentQueueIndex: " + currentQueueIndex);
+        StringBuilder pairQueueDebugLine = new StringBuilder();
+        for (int i=currentQueueIndex,j=0;j<10;j++,i=(i+1)%pairQueue.length) {
+            if (pairQueue[i] == null)
+                pairQueueDebugLine.append("null ");
+            else
+                pairQueueDebugLine.append("\""+pairQueue[i].first + "\" ");
+        }
+        Log.d(TAG, pairQueueDebugLine.toString());
+    }
+
+    // Inserts the given pair to the given index in the pair queue. If the given index is not empty, looks for the first empty index after that, cyclically.
+    void InsertToPairQueue(int index, Pair p)
+    {
+        long id = p==null?0:p.id;
+        if (pairQueue[index] == null)
+        {
+            pairQueue[index] = p;
+            helper.setPairQueueElement(index, id);
+            return ;
+        }
+        for (int currentIndex = (index+1)%pairQueue.length; currentIndex != index; currentIndex=(currentIndex+1)%pairQueue.length)
+            if (pairQueue[currentIndex] == null)
+            {
+                pairQueue[currentIndex] = p;
+                helper.setPairQueueElement(currentIndex, id);
+                return ;
+            }
+        Log.w(TAG, "No empty spot left in the pair queue.");
     }
 
     void FinishRound(boolean isMC, boolean isPass) {
         final Pair currentPairVal = currentPair.getValue();
-        final double oldScore = currentPairVal.hardness;
-        double newScore = oldScore;
-        MistakeQueueElement currentMQE = mistakeQueue[currentQueueIndex];
+        int oldPeriod = currentPairVal.period;
+        double newScore = currentPairVal.hardness;
         if (isPass) {
             newScore -= isMC ? 0.3 : 0.5;
-            if (currentMQE.p != null) {
-                assert currentMQE.mistakeCnt > 0;
-                currentMQE.mistakeCnt--;
-                if (currentMQE.mistakeCnt == 0)
-                    currentMQE.p = null;
-            }
+            currentPairVal.period *= 2;
+            if (currentPairVal.period > MaxWordPeriod)
+                currentPairVal.period = MaxWordPeriod;
         }
         else {
             newScore += isMC ? 0.7 : 0.6;
-            if (currentMQE.p == null) {
-                assert currentMQE.mistakeCnt == 0;
-                currentMQE.p = currentPairVal;
-            }
-            currentMQE.mistakeCnt++;
-            currentMQE.mistakeCnt = Math.max(currentMQE.mistakeCnt, MyApplication.MaxMistakeQueueCounter);
+            currentPairVal.period /= 2;
+            if (currentPairVal.period == 0)
+                currentPairVal.period = 1;
         }
         newScore = min(newScore, 2.0);
         newScore = max(newScore, -1.33);
 
         currentPairVal.hardness = newScore; // Update the score of the current word
-        HardnessChanged(currentPairVal);
-        NewRound();
+        HardnessPeriodChanged(currentPairVal);
+        pairQueue[currentQueueIndex] = null; // We can't use InsertToPairQueue here because it'd just skip currentQueueIndex since it's not null. So we have to change the pairQueue and reflect the change to the DB manually.
+        helper.setPairQueueElement(currentQueueIndex, (long)0);
+        if (currentPairVal.period != 0 && !(oldPeriod == MaxWordPeriod && currentPairVal.period == MaxWordPeriod))
+            InsertToPairQueue((currentQueueIndex+currentPairVal.period)%pairQueue.length, currentPairVal);
+        roundId++;
+        currentQueueIndex=(currentQueueIndex+1)%pairQueue.length;
+        helper.setCurrentQueueIndex(currentQueueIndex);
+        StartRound();
     }
 }
