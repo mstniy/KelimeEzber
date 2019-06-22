@@ -4,4 +4,10 @@
         <item>Lexicographical</item>
         <item>Hardness</item>
     </array>
+
+    <array name="exerciseTypeArray">
+        <item>Smart</item>
+        <item>New</item>
+        <item>Random</item>
+    </array>
 </resources>

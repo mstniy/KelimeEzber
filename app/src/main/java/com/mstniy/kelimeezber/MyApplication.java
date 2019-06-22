@@ -2,6 +2,8 @@ package com.mstniy.kelimeezber;
 
 import android.app.Application;
 import android.arch.lifecycle.MutableLiveData;
+import android.arch.lifecycle.Observer;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.HashMap;
@@ -26,6 +28,7 @@ public class MyApplication extends Application {
     DatabaseHelper helper = null;
     int roundId = 0;
     MutableLiveData<Boolean> sortByHardness = new MutableLiveData<>();
+    int exerciseType = 0;
 
     public MyApplication() {
     }
@@ -76,8 +79,12 @@ public class MyApplication extends Application {
             }
         wlist.remove(p);
         NotifyWListObservers();
-        wordTranslationsFwd.remove(p.first);
-        wordTranslationsBwd.remove(p.second);
+        wordTranslationsFwd.get(p.first).remove(p.second);
+        if (wordTranslationsFwd.get(p.first).isEmpty())
+            wordTranslationsFwd.remove(p.first);
+        wordTranslationsBwd.get(p.second).remove(p.first);
+        if (wordTranslationsBwd.get(p.second).isEmpty())
+            wordTranslationsBwd.remove(p.second);
         helper.removePair(p);
         if (currentPair.getValue() == p)
             StartRound();
@@ -122,7 +129,7 @@ public class MyApplication extends Application {
         return true;
     }
 
-    void StartRound() {
+    void StartRoundSmart() {
         if (pairQueue[currentQueueIndex] == null)
             InsertToPairQueue(currentQueueIndex, PairChooser.ChoosePairSmart(this));
 
@@ -137,6 +144,23 @@ public class MyApplication extends Application {
                 pairQueueDebugLine.append("\""+pairQueue[i].first + "\" ");
         }
         Log.d(TAG, pairQueueDebugLine.toString());
+    }
+
+    void StartRoundNew() {
+        currentPair.setValue(PairChooser.ChoosePairNew(this));
+    }
+
+    void StartRoundRandom() {
+        currentPair.setValue(PairChooser.ChoosePairRandom(this));
+    }
+
+    void StartRound() {
+        if (exerciseType == 0)
+            StartRoundSmart();
+        else if (exerciseType == 1)
+            StartRoundNew();
+        else if (exerciseType == 2)
+            StartRoundRandom();
     }
 
     // Inserts the given pair to the given index in the pair queue. If the given index is not empty, looks for the first empty index after that, cyclically.
@@ -180,13 +204,16 @@ public class MyApplication extends Application {
 
         currentPairVal.hardness = newScore; // Update the score of the current word
         HardnessPeriodChanged(currentPairVal);
-        pairQueue[currentQueueIndex] = null; // We can't use InsertToPairQueue here because it'd just skip currentQueueIndex since it's not null. So we have to change the pairQueue and reflect the change to the DB manually.
-        helper.setPairQueueElement(currentQueueIndex, (long)0);
-        if (currentPairVal.period != 0 && !(oldPeriod == MaxWordPeriod && currentPairVal.period == MaxWordPeriod))
-            InsertToPairQueue((currentQueueIndex+currentPairVal.period)%pairQueue.length, currentPairVal);
+
+        if (exerciseType == 0) {
+            pairQueue[currentQueueIndex] = null; // We can't use InsertToPairQueue here because it'd just skip currentQueueIndex since it's not null. So we have to change the pairQueue and reflect the change to the DB manually.
+            helper.setPairQueueElement(currentQueueIndex, (long) 0);
+            if (currentPairVal.period != 0 && !(oldPeriod == MaxWordPeriod && currentPairVal.period == MaxWordPeriod))
+                InsertToPairQueue((currentQueueIndex + currentPairVal.period) % pairQueue.length, currentPairVal);
+            currentQueueIndex=(currentQueueIndex+1)%pairQueue.length;
+            helper.setCurrentQueueIndex(currentQueueIndex);
+        }
         roundId++;
-        currentQueueIndex=(currentQueueIndex+1)%pairQueue.length;
-        helper.setCurrentQueueIndex(currentQueueIndex);
         StartRound();
     }
 }

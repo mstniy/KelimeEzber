@@ -1,9 +1,6 @@
 package com.mstniy.kelimeezber;
 
-import android.content.Intent;
 import android.support.design.widget.TabLayout;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -13,18 +10,13 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-
-import android.widget.Button;
-import android.widget.TextView;
 
 public class TabbedActivity extends AppCompatActivity {
 
     MyApplication app;
+    int currentTabPosition;
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -62,13 +54,34 @@ public class TabbedActivity extends AppCompatActivity {
 
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                currentTabPosition = tab.getPosition();
+                invalidateOptionsMenu();
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+
+            }
+        });
+        currentTabPosition = 0;
     }
 
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_tabbed, menu);
+        if (currentTabPosition == 0)
+            getMenuInflater().inflate(R.menu.menu_exercise, menu);
+        else
+            getMenuInflater().inflate(R.menu.menu_wordlist, menu);
         return true;
     }
 
@@ -80,8 +93,11 @@ public class TabbedActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == R.id.action_sort) {
-            DialogFragment sortbyDialog = new SortByDialog();
-            sortbyDialog.show(getSupportFragmentManager(), "sortby");
+            new SortByDialog().show(getSupportFragmentManager(), "sortby");
+            return true;
+        }
+        else if (id == R.id.action_exercisetype) {
+            new ExerciseTypeDialog().show(getSupportFragmentManager(), "exercisetype");
             return true;
         }
         else
