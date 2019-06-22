@@ -15,7 +15,6 @@ public class ExerciseFragment extends Fragment {
 
     static final String TAG = ExerciseFragment.class.getName();
 
-    final double FORWARD_PROBABILITY = 0.33;
     MyApplication app;
     View rootView;
     MCFragment multipleChoiceFragment;
@@ -57,14 +56,12 @@ public class ExerciseFragment extends Fragment {
     void cpiChanged(Pair p) {
         if (p == null)
             return ;
-        boolean currentFwd = (new Random().nextDouble() <= FORWARD_PROBABILITY);
-        if (currentFwd) {
-            setMC(true);
-            multipleChoiceFragment.newRound(p, currentFwd);
+        setMC(app.currentFwd);
+        if (app.currentFwd) {
+            multipleChoiceFragment.newRound(p);
         }
         else {
-            setMC(false);
-            writingFragment.newRoundW(p, currentFwd);
+            writingFragment.newRound(p);
         }
     }
 }

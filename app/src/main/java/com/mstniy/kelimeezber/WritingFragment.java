@@ -25,7 +25,6 @@ public class WritingFragment extends Fragment {
     final String TAG = getClass().getName();
 
     MyApplication app;
-    boolean currentFwd;
     TextView label, hintView;
     EditText userInput;
     Button hintButton, backspace;
@@ -86,23 +85,22 @@ public class WritingFragment extends Fragment {
         return rootView;
     }
 
-    void newRoundW(Pair p, boolean _currentFwd) {
+    void newRound(Pair p) {
         isPass = true;
-        currentFwd = _currentFwd;
         // Clear the view first (we have the old exercise on it)
         label.setText("");
         hintView.setText("");
         userInput.setText("");
         letterTable.removeAllViews();
 
-        label.setText(currentFwd?p.first:p.second);
+        label.setText(app.currentFwd?p.first:p.second);
         //TODO: Maybe have a dedicated button for space? We also need to check if the word is suitable for writing challenge (it may be too long)
         //TODO: And also, if the words has a lot of translations, trying to add all of their letters on the screen will be a mess.
         //TODO: And maybe add some "trap" letters for extra difficulty?
         HashSet<Character> choices = new HashSet<>();
         if (true) // Limit the scope of *word*
         {
-            String word = currentFwd?p.second:p.first;
+            String word = app.currentFwd?p.second:p.first;
             for (int i=0; i<word.length(); i++)
                 choices.add(word.charAt(i));
         }
@@ -152,7 +150,7 @@ public class WritingFragment extends Fragment {
 
     void EditTextChanged() {
         Pair p = app.currentPair.getValue();
-        String answer = currentFwd?p.second:p.first;
+        String answer = app.currentFwd?p.second:p.first;
         if (userInput.getText().toString().compareTo(answer) == 0)
             app.FinishRound(false, isPass);
     }
@@ -160,7 +158,7 @@ public class WritingFragment extends Fragment {
     void HintButtonClicked() {
         Pair currentPair = app.currentPair.getValue();
         isPass = false;
-        hintView.setText(currentFwd ? currentPair.second : currentPair.first);
+        hintView.setText(app.currentFwd ? currentPair.second : currentPair.first);
     }
 
     void BackspaceClicked() {

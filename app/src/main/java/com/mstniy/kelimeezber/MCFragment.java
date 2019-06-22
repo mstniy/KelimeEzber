@@ -18,7 +18,6 @@ public class MCFragment extends Fragment {
     final String TAG = getClass().getName();
 
     MyApplication app;
-    boolean currentFwd;
     TextView label;
     Button buttons[] = new Button[4];
     // If this is false, the user has failed the current exercise (for example, clicked a wrong answer for a multiple choice exercise or requested a hint for a writing exercise)
@@ -55,8 +54,7 @@ public class MCFragment extends Fragment {
         return rootView;
     }
 
-    void newRound(Pair p, boolean _currentFwd) {
-        currentFwd = _currentFwd;
+    void newRound(Pair p) {
         isPass = true;
         //Clear the view first (we have the old exercise on it)
         for (int i=0;i<4;i++)
@@ -66,14 +64,14 @@ public class MCFragment extends Fragment {
             buttons[i].setText("");
 
         final int answer=new Random().nextInt(4);
-        label.setText(currentFwd?p.first:p.second);
+        label.setText(app.currentFwd?p.first:p.second);
         for (int i=0;i<4;i++)
         {
             if (i == answer)
-                buttons[i].setText(currentFwd ? p.second : p.first);
+                buttons[i].setText(app.currentFwd ? p.second : p.first);
             else {
                 final Pair p2 = PairChooser.ChoosePairRandom(app);
-                buttons[i].setText(currentFwd?p2.second:p2.first);
+                buttons[i].setText(app.currentFwd?p2.second:p2.first);
             }
         }
     }
@@ -86,7 +84,7 @@ public class MCFragment extends Fragment {
     }
 
     boolean isACorrectAnswer(String s) {
-        if (currentFwd)
+        if (app.currentFwd)
             return app.wordTranslationsFwd.get(app.currentPair.getValue().first.toString()).contains(s);
         else
             return app.wordTranslationsBwd.get(app.currentPair.getValue().second.toString()).contains(s);

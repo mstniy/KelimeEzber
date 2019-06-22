@@ -6,6 +6,7 @@ import android.util.Log;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Random;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -13,6 +14,7 @@ import static java.lang.Math.min;
 public class MyApplication extends Application {
 
     private static final String TAG = MyApplication.class.getName();
+    final double FORWARD_PROBABILITY = 0.33;
 
     HashSet<Pair> wlist = new HashSet<>();
     HashSet<Runnable> wlistObservers = new HashSet<>(); // Java (or Android or JavaRX) doesn't have an ObservableSet, so we implement it ourselves.
@@ -22,6 +24,7 @@ public class MyApplication extends Application {
     // If pairQueue[i].p == null, that spot is empty.
     Pair[] pairQueue;
     int currentQueueIndex;
+    boolean currentFwd;
     MutableLiveData<Pair> currentPair = new MutableLiveData<>();
     DatabaseHelper helper = null;
     int roundId = 0;
@@ -126,6 +129,7 @@ public class MyApplication extends Application {
         if (pairQueue[currentQueueIndex] == null)
             InsertToPairQueue(currentQueueIndex, PairChooser.ChoosePairSmart(this));
 
+        currentFwd = (new Random().nextDouble() <= FORWARD_PROBABILITY);
         currentPair.setValue(pairQueue[currentQueueIndex]);
 
         Log.d(TAG, "currentQueueIndex: " + currentQueueIndex);

@@ -19,12 +19,18 @@ public class DrawerActivity extends AppCompatActivity {
 
     MyApplication app;
 
+    ExerciseFragment exerciseFragment;
+    WordListFragment listFragment;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tabbed);
 
         app = (MyApplication) getApplicationContext();
+
+        exerciseFragment = new ExerciseFragment();
+        listFragment = new WordListFragment();
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -45,16 +51,12 @@ public class DrawerActivity extends AppCompatActivity {
                 switch(menuItem.getItemId()) {
                     default:
                     case R.id.drawer_exercise:
-                        fragment = new ExerciseFragment();
-                        break;
                     case R.id.drawer_new:
-                        fragment = new ExerciseFragment();
-                        break;
                     case R.id.drawer_random:
-                        fragment = new ExerciseFragment();
+                        fragment = exerciseFragment;
                         break;
                     case R.id.drawer_list:
-                        fragment = new WordListFragment();
+                        fragment = listFragment;
                         break;
                 }
                 fragmentManager.beginTransaction()
