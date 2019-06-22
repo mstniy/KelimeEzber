@@ -1,9 +1,13 @@
 <resources>
     <string name="app_name">KelimeEzber</string>
     <string name="title_activity_tabbed">TabbedActivity</string>
-    <string name="tab_text_1">Exercise</string>
-    <string name="tab_text_2">Word List</string>
+    <string name="drawer_exercise">Exercise</string>
+    <string name="drawer_new">Learn New Words</string>
+    <string name="drawer_random">Practice Random Words</string>
+    <string name="drawer_list">Word List</string>
     <string name="action_sort">Sort by</string>
     <string name="sortby_title">Sort by</string>
+    <string name="navigation_drawer_open">Open Navigation Drawer</string>
+    <string name="navigation_drawer_close">Close Navigation Drawer</string>
 
 </resources>

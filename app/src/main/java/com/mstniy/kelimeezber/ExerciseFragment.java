@@ -28,12 +28,12 @@ public class ExerciseFragment extends Fragment {
                              Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = (MyApplication) getContext().getApplicationContext();
-        rootView = inflater.inflate(R.layout.exercise_root, container, false);
-        frame = rootView.findViewById(R.id.frame);
+        rootView = inflater.inflate(R.layout.exercise_fragment_frame, container, false);
+        frame = rootView.findViewById(R.id.exercise_fragment_frame);
         multipleChoiceFragment = new MCFragment();
         writingFragment = new WritingFragment();
         isMC = true;
-        getChildFragmentManager().beginTransaction().replace(R.id.frame, multipleChoiceFragment).commit();
+        getChildFragmentManager().beginTransaction().replace(R.id.exercise_fragment_frame, multipleChoiceFragment).commit();
         getChildFragmentManager().executePendingTransactions();
 
         app.currentPair.observe(this, new Observer<Pair>() {
@@ -50,7 +50,7 @@ public class ExerciseFragment extends Fragment {
         if (mc == isMC)
             return ;
         isMC = mc;
-        getChildFragmentManager().beginTransaction().replace(R.id.frame, mc ? multipleChoiceFragment : writingFragment).commit();
+        getChildFragmentManager().beginTransaction().replace(R.id.exercise_fragment_frame, mc ? multipleChoiceFragment : writingFragment).commit();
         getChildFragmentManager().executePendingTransactions();
     }
 

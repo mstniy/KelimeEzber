@@ -14,7 +14,7 @@
             android:name=".AddWordActivity"
             android:windowSoftInputMode="stateVisible"></activity>
         <activity
-            android:name=".TabbedActivity"
+            android:name=".DrawerActivity"
             android:label="KelimeEzber"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
