@@ -129,7 +129,7 @@ public class MyApplication extends Application {
 
     void StartRoundSmart() {
         if (pairQueue[currentQueueIndex] == null)
-            InsertToPairQueue(currentQueueIndex, PairChooser.ChoosePairSmart(this));
+            InsertToPairQueue(currentQueueIndex, PairChooser.ChoosePairRandom(this));
 
         currentPair.setValue(pairQueue[currentQueueIndex]);
 
