@@ -3,8 +3,6 @@ package com.mstniy.kelimeezber;
 import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.Observer;
 import android.content.Intent;
-import android.databinding.ObservableArrayList;
-import android.databinding.ObservableList;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -21,18 +19,16 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 class MyViewHolder extends RecyclerView.ViewHolder {
-    public TextView mTextView0, mTextView1, mTextViewHardness;
+    public TextView mTextView0, mTextView1, mTextViewPeriod;
     public Button removeButton;
-    public MyViewHolder(View view, TextView _mTextView0, TextView _mTextView1, TextView _mTextViewHardness, Button _removeButton) {
+    public MyViewHolder(View view, TextView _mTextView0, TextView _mTextView1, TextView _mTextViewPeriod, Button _removeButton) {
         super(view);
         mTextView0 = _mTextView0;
         mTextView1 = _mTextView1;
-        mTextViewHardness = _mTextViewHardness;
+        mTextViewPeriod = _mTextViewPeriod;
         removeButton = _removeButton;
     }
 }
@@ -50,7 +46,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     public RecycleViewAdapter(MyApplication _app, HashSet<Pair> myDataset, LifecycleOwner lifecycleOwner) {
         app = _app;
         setDataset(myDataset);
-        app.sortByHardness.observe(lifecycleOwner, new Observer<Boolean>() {
+        app.sortByPeriod.observe(lifecycleOwner, new Observer<Boolean>() {
             @Override
             public void onChanged(@Nullable Boolean sortByHardness) {
                 sortMDataset();
@@ -60,8 +56,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     }
 
     private void sortMDataset() {
-        boolean sortByHardness = app.sortByHardness.getValue();
-        if (sortByHardness == false) {
+        if (app.sortByPeriod.getValue() == false) {
             Collections.sort(mDataset, new Comparator<Pair>() {
                 @Override
                 public int compare(Pair l, Pair r) {
@@ -73,12 +68,15 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
             Collections.sort(mDataset, new Comparator<Pair>() {
                 @Override
                 public int compare(Pair l, Pair r) {
-                    if (l.hardness < r.hardness)
+                    if (l.period == 0 && r.period > 0)
                         return 1;
-                    else if (l.hardness > r.hardness)
+                    if (r.period == 0 && l.period > 0)
                         return -1;
-                    else
-                        return 0;
+                    if (l.period > r.period)
+                        return 1;
+                    else if (r.period > l.period)
+                        return -1;
+                    return 0;
                 }
             });
         }
@@ -112,7 +110,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
                 v,
                 (TextView)v.findViewById(R.id.textView0),
                 (TextView)v.findViewById(R.id.textView1),
-                (TextView)v.findViewById(R.id.text_view_hardness),
+                (TextView)v.findViewById(R.id.text_view_period),
                 (Button)v.findViewById(R.id.removeButton));
         return vh;
     }
@@ -122,7 +120,8 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     public void onBindViewHolder(MyViewHolder holder, final int position) {
         holder.mTextView0.setText(mDataset.get(position).first);
         holder.mTextView1.setText(mDataset.get(position).second);
-        holder.mTextViewHardness.setText(String.valueOf(mDataset.get(position).hardness));
+        int period = mDataset.get(position).period;
+        holder.mTextViewPeriod.setText((period>0)?String.valueOf(period):"\u221E"); // \u221E is the infinity symbol
 
         holder.removeButton.setOnClickListener(new View.OnClickListener() {
             @Override

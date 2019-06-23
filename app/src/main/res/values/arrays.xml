@@ -2,7 +2,7 @@
 <resources>
     <array name="sortByArray">
         <item>Lexicographical</item>
-        <item>Hardness</item>
+        <item>Period</item>
     </array>
 
     <array name="exerciseTypeArray">

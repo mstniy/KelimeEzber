@@ -2,8 +2,6 @@ package com.mstniy.kelimeezber;
 
 import android.app.Application;
 import android.arch.lifecycle.MutableLiveData;
-import android.arch.lifecycle.Observer;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.HashMap;
@@ -27,7 +25,7 @@ public class MyApplication extends Application {
     MutableLiveData<Pair> currentPair = new MutableLiveData<>();
     DatabaseHelper helper = null;
     int roundId = 0;
-    MutableLiveData<Boolean> sortByHardness = new MutableLiveData<>();
+    MutableLiveData<Boolean> sortByPeriod = new MutableLiveData<>();
     int exerciseType = 0;
 
     public MyApplication() {
@@ -36,7 +34,7 @@ public class MyApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        sortByHardness.setValue(true);
+        sortByPeriod.setValue(true);
         helper = new DatabaseHelper(this);
         SyncStateWithDB();
         StartRound();

@@ -5,7 +5,6 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
-import android.view.LayoutInflater;
 
 public class SortByDialog extends DialogFragment {
     @Override
@@ -15,7 +14,7 @@ public class SortByDialog extends DialogFragment {
                 .setItems(R.array.sortByArray, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         MyApplication app = (MyApplication) getContext().getApplicationContext();
-                        app.sortByHardness.setValue(which==1);
+                        app.sortByPeriod.setValue(which==1);
                     }
                 });
         return builder.create();
