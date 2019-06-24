@@ -10,7 +10,11 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -140,6 +144,8 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
 
 public class WordListFragment extends Fragment {
 
+    final static String TAG = WordListFragment.class.getName();
+
     MyApplication app;
     RecyclerView mRecyclerView;
     RecycleViewAdapter mAdapter;
@@ -151,6 +157,7 @@ public class WordListFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
         View rootView = inflater.inflate(R.layout.fragment_word_list, container, false);
 
         app = ((MyApplication)getActivity().getApplicationContext());
@@ -201,5 +208,26 @@ public class WordListFragment extends Fragment {
         });
 
         return rootView;
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        inflater.inflate(R.menu.menu_wordlist, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        if (id == R.id.action_sort) {
+            new SortByDialog().show(getFragmentManager(), "sortby");
+            return true;
+        }
+        else
+            return super.onOptionsItemSelected(item);
     }
 }
