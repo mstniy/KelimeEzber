@@ -14,8 +14,10 @@ public class ExerciseTypeDialog extends DialogFragment {
                 .setItems(R.array.exerciseTypeArray, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         MyApplication app = (MyApplication) getContext().getApplicationContext();
-                        app.exerciseType = which;
-                        app.StartRound();
+                        if (app.exerciseType != which) {
+                            app.exerciseType = which;
+                            app.StartRound();
+                        }
                     }
                 });
         return builder.create();

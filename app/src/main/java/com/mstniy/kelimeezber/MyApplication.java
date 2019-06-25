@@ -20,7 +20,7 @@ public class MyApplication extends Application {
     HashSet<Runnable> wlistObservers = new HashSet<>(); // Java (or Android or JavaRX) doesn't have an ObservableSet, so we implement it ourselves.
     HashMap<String, HashSet<String>> wordTranslationsFwd = new HashMap<>();
     HashMap<String, HashSet<String>> wordTranslationsBwd = new HashMap<>();
-    static final int MaxWordPeriod = 64;
+    static final int MaxWordPeriod = 128;
     // If pairQueue[i].p == null, that spot is empty.
     Pair[] pairQueue;
     int currentQueueIndex;
@@ -187,19 +187,19 @@ public class MyApplication extends Application {
 
     void FinishRound(boolean isMC, boolean isPass) {
         final Pair currentPairVal = currentPair.getValue();
-        int oldPeriod = currentPairVal.period;
         double newScore = currentPairVal.hardness;
         if (isPass) {
             newScore -= isMC ? 0.3 : 0.5;
             currentPairVal.period *= 2;
             if (currentPairVal.period > MaxWordPeriod)
-                currentPairVal.period = MaxWordPeriod;
+                currentPairVal.period = 0;
         }
         else {
             newScore += isMC ? 0.7 : 0.6;
-            currentPairVal.period /= 2;
             if (currentPairVal.period == 0)
-                currentPairVal.period = 1;
+                currentPairVal.period = MaxWordPeriod;
+            else if (currentPairVal.period > 1)
+                currentPairVal.period /= 2;
         }
         newScore = min(newScore, 2.0);
         newScore = max(newScore, -1.33);
@@ -210,7 +210,7 @@ public class MyApplication extends Application {
         if (exerciseType == 0) {
             pairQueue[currentQueueIndex] = null; // We can't use InsertToPairQueue here because it'd just skip currentQueueIndex since it's not null. So we have to change the pairQueue and reflect the change to the DB manually.
             helper.setPairQueueElement(currentQueueIndex, (long) 0);
-            if (currentPairVal.period != 0 && !(oldPeriod == MaxWordPeriod && currentPairVal.period == MaxWordPeriod))
+            if (currentPairVal.period != 0)
                 InsertToPairQueue((currentQueueIndex + currentPairVal.period) % pairQueue.length, currentPairVal);
             currentQueueIndex=(currentQueueIndex+1)%pairQueue.length;
             helper.setCurrentQueueIndex(currentQueueIndex);

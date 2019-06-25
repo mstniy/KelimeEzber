@@ -21,6 +21,7 @@ public class DrawerActivity extends AppCompatActivity {
 
     ExerciseFragment exerciseFragment;
     WordListFragment listFragment;
+    StatsFragment statsFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +32,7 @@ public class DrawerActivity extends AppCompatActivity {
 
         exerciseFragment = new ExerciseFragment();
         listFragment = new WordListFragment();
+        statsFragment = new StatsFragment();
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -55,6 +57,9 @@ public class DrawerActivity extends AppCompatActivity {
                         break;
                     case R.id.drawer_list:
                         fragment = listFragment;
+                        break;
+                    case R.id.drawer_stats:
+                        fragment = statsFragment;
                         break;
                 }
                 fragmentManager.beginTransaction()

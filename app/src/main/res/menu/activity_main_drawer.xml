@@ -6,4 +6,6 @@
             android:title="@string/drawer_exercise" />
         <item android:id="@+id/drawer_list"
             android:title="@string/drawer_list" />
+        <item android:id="@+id/drawer_stats"
+            android:title="@string/drawer_stats" />
 </menu>
