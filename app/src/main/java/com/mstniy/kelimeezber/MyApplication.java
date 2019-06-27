@@ -33,7 +33,7 @@ public class MyApplication extends Application implements TextToSpeech.OnInitLis
     MutableLiveData<Boolean> sortByPeriod = new MutableLiveData<>();
     int exerciseType = 0;
     TextToSpeech tts;
-    boolean ttsSupported, ttsEnabled = true;
+    boolean ttsSupported, ttsMuted = true; // Start muted, just in case
 
     @Override
     public void onInit(int status) {
@@ -232,5 +232,10 @@ public class MyApplication extends Application implements TextToSpeech.OnInitLis
         }
         roundId++;
         StartRound();
+    }
+
+    void speak(String s) {
+        if (ttsSupported && ttsMuted == false)
+            tts.speak(s, TextToSpeech.QUEUE_FLUSH, null);
     }
 }

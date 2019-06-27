@@ -76,8 +76,7 @@ public class MCFragment extends Fragment {
             }
         }
 
-        if (app.ttsSupported && app.ttsEnabled)
-            app.tts.speak(p.first, TextToSpeech.QUEUE_FLUSH, null);
+        app.speak(p.first);
     }
 
     void ChangeColorOfButton(Button button, boolean highlight) {

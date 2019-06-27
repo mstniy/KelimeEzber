@@ -4,16 +4,14 @@ import android.arch.lifecycle.Observer;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
-
-import java.util.Random;
 
 public class ExerciseFragment extends Fragment {
 
@@ -24,6 +22,7 @@ public class ExerciseFragment extends Fragment {
     MCFragment multipleChoiceFragment;
     WritingFragment writingFragment;
     FrameLayout frame;
+    Button muteButton;
     boolean isMC;
 
     @Override
@@ -34,6 +33,15 @@ public class ExerciseFragment extends Fragment {
         app = (MyApplication) getContext().getApplicationContext();
         rootView = inflater.inflate(R.layout.exercise_fragment_frame, container, false);
         frame = rootView.findViewById(R.id.exercise_fragment_frame);
+        muteButton = rootView.findViewById(R.id.mute_button);
+        if (app.ttsMuted == false)
+            muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode, 0, 0, 0);
+        else
+            muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode_off, 0, 0, 0);
+        muteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) { muteButtonPressed(); }
+        });
         multipleChoiceFragment = new MCFragment();
         writingFragment = new WritingFragment();
         isMC = true;
@@ -43,7 +51,7 @@ public class ExerciseFragment extends Fragment {
         app.currentPair.observe(this, new Observer<Pair>() {
             @Override
             public void onChanged(@Nullable Pair pair) {
-                cpiChanged(pair);
+                cpChanged(pair);
             }
         });
 
@@ -79,7 +87,7 @@ public class ExerciseFragment extends Fragment {
         getChildFragmentManager().executePendingTransactions();
     }
 
-    void cpiChanged(Pair p) {
+    void cpChanged(Pair p) {
         if (p == null)
             return ;
         setMC(app.currentFwd);
@@ -89,5 +97,16 @@ public class ExerciseFragment extends Fragment {
         else {
             writingFragment.newRound(p);
         }
+    }
+
+    void muteButtonPressed() {
+        app.ttsMuted = !app.ttsMuted;
+        if (app.ttsMuted == false) {
+            muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode, 0, 0, 0);
+            if (app.currentFwd)
+                app.speak(app.currentPair.getValue().first);
+        }
+        else
+            muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode_off, 0, 0, 0);
     }
 }

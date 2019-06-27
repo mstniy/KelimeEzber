@@ -151,7 +151,7 @@ public class WritingFragment extends Fragment {
 
     void EditTextChanged() {
         Pair p = app.currentPair.getValue();
-        String answer = app.currentFwd?p.second:p.first;
+        String answer = p.first;
         if (userInput.getText().toString().compareTo(answer) == 0)
             app.FinishRound(false, isPass);
     }
@@ -160,9 +160,7 @@ public class WritingFragment extends Fragment {
         Pair currentPair = app.currentPair.getValue();
         isPass = false;
         hintView.setText(currentPair.first);
-
-        if (app.ttsSupported && app.ttsEnabled)
-            app.tts.speak(currentPair.first, TextToSpeech.QUEUE_FLUSH, null);
+        app.speak(currentPair.first);
     }
 
     void BackspaceClicked() {
