@@ -24,6 +24,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 class MyViewHolder extends RecyclerView.ViewHolder {
     public TextView mTextView0, mTextView1, mTextViewPeriod;
@@ -42,13 +45,14 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     private static final String TAG = RecycleViewAdapter.class.getName();
 
     MyApplication app;
-    private String filterText = "";
+    private Pattern filterPattern = null;
     private ArrayList<Pair> mDataset;
     private HashSet<Pair> mDatasetUnfiltered;
 
     // Provide a suitable constructor (depends on the kind of dataset)
     public RecycleViewAdapter(MyApplication _app, HashSet<Pair> myDataset, LifecycleOwner lifecycleOwner) {
         app = _app;
+        filterPattern = Pattern.compile("");
         setDataset(myDataset);
         app.sortByPeriod.observe(lifecycleOwner, new Observer<Boolean>() {
             @Override
@@ -88,16 +92,26 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
 
     public void setDataset(HashSet<Pair> newDataset) {
         mDatasetUnfiltered = newDataset;
-        filter(filterText);
+        filter();
     }
 
-    public void filter(String text) {
-        filterText = text;
+    void setFilterPattern(String pattern) {
+        try {
+            filterPattern = Pattern.compile(pattern);
+        }
+        catch (PatternSyntaxException e) {
+            filterPattern = null;
+        }
+        filter();
+    }
+
+    public void filter() {
         mDataset = new ArrayList<>();
-        text = text.toLowerCase();
-        for(Pair p : mDatasetUnfiltered){
-            if(p.first.toLowerCase().contains(text) || p.second.toLowerCase().contains(text)){
-                mDataset.add(p);
+        if (filterPattern != null) {
+            for (Pair p : mDatasetUnfiltered) {
+                if (filterPattern.matcher(p.first).find() ||
+                        filterPattern.matcher(p.second).find())
+                    mDataset.add(p);
             }
         }
         sortMDataset();
@@ -196,13 +210,13 @@ public class WordListFragment extends Fragment {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                mAdapter.filter(query);
+                mAdapter.setFilterPattern(query);
                 return true;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                mAdapter.filter(newText);
+                mAdapter.setFilterPattern(newText);
                 return true;
             }
         });
