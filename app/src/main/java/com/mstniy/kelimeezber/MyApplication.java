@@ -2,16 +2,18 @@ package com.mstniy.kelimeezber;
 
 import android.app.Application;
 import android.arch.lifecycle.MutableLiveData;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Random;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
-public class MyApplication extends Application {
+public class MyApplication extends Application implements TextToSpeech.OnInitListener{
 
     private static final String TAG = MyApplication.class.getName();
     final double FORWARD_PROBABILITY = 0.33;
@@ -30,6 +32,18 @@ public class MyApplication extends Application {
     int roundId = 0;
     MutableLiveData<Boolean> sortByPeriod = new MutableLiveData<>();
     int exerciseType = 0;
+    TextToSpeech tts;
+    boolean ttsSupported, ttsEnabled = true;
+
+    @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS && tts.setLanguage(new Locale("sv", "SE")) != TextToSpeech.LANG_NOT_SUPPORTED)
+            ttsSupported = true;
+        else
+            ttsSupported = false;
+        Log.i(TAG, "TextToSpeech in Swedish is " + (ttsSupported?"":"not ") + "supported.");
+        StartRound();
+    }
 
     public MyApplication() {
     }
@@ -40,7 +54,8 @@ public class MyApplication extends Application {
         sortByPeriod.setValue(true);
         helper = new DatabaseHelper(this);
         SyncStateWithDB();
-        StartRound();
+        tts = new TextToSpeech(this, this);
+        // Wait for the call to onInit
     }
 
     private void NotifyWListObservers() {

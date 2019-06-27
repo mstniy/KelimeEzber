@@ -1,6 +1,7 @@
 package com.mstniy.kelimeezber;
 
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -158,7 +159,10 @@ public class WritingFragment extends Fragment {
     void HintButtonClicked() {
         Pair currentPair = app.currentPair.getValue();
         isPass = false;
-        hintView.setText(app.currentFwd ? currentPair.second : currentPair.first);
+        hintView.setText(currentPair.first);
+
+        if (app.ttsSupported && app.ttsEnabled)
+            app.tts.speak(currentPair.first, TextToSpeech.QUEUE_FLUSH, null);
     }
 
     void BackspaceClicked() {

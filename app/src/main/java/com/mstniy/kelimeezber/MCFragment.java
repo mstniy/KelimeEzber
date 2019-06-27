@@ -2,6 +2,7 @@ package com.mstniy.kelimeezber;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -74,6 +75,9 @@ public class MCFragment extends Fragment {
                 buttons[i].setText(app.currentFwd?p2.second:p2.first);
             }
         }
+
+        if (app.ttsSupported && app.ttsEnabled)
+            app.tts.speak(p.first, TextToSpeech.QUEUE_FLUSH, null);
     }
 
     void ChangeColorOfButton(Button button, boolean highlight) {
