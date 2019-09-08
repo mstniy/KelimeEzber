@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <array name="sortByArray">
-        <item>Lexicographical</item>
-        <item>Period</item>
-    </array>
-
     <array name="exerciseTypeArray">
         <item>Smart</item>
         <item>New</item>
         <item>Random</item>
+    </array>
+    <array name="sortByArray">
+        <item>Lexicographical</item>
+        <item>Period</item>
     </array>
 </resources>

@@ -6,15 +6,16 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+import java.util.Iterator;
 
 public class AddWordActivity extends AppCompatActivity {
-
     Button addButton;
+    MyApplication app;
     TextInputEditText edit0, edit1;
 
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        app = (MyApplication) getApplicationContext();
         setContentView(R.layout.activity_add_word);
         addButton = findViewById(R.id.addButton);
         edit0 = findViewById(R.id.edit0);
@@ -27,7 +28,7 @@ public class AddWordActivity extends AppCompatActivity {
         });
     }
 
-    void AddButtonClicked() {
+    private void AddButtonClicked() {
         String first = edit0.getText().toString();
         String second = edit1.getText().toString();
         if (first.length() == 0 || second.length() == 0)
@@ -38,7 +39,9 @@ public class AddWordActivity extends AppCompatActivity {
                         Toast.LENGTH_SHORT).show();
                 return ;
             }
-        ((MyApplication)getApplicationContext()).AddPair(new Pair(0, first, second, 0, 1)); // AddPair will set proper id
+        app.AddPair(new Pair(0, first, second, 0, 1)); // AddPair will set proper id
+        if (app.currentPair == null)
+            app.StartRound();
         finish();
     }
 }

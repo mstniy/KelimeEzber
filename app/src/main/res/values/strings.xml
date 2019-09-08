@@ -1,15 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="action_selectiontype">Selection type</string>
+    <string name="action_sort">Sort by</string>
     <string name="app_name">KelimeEzber</string>
     <string name="drawer_exercise">Exercise</string>
+    <string name="drawer_list">Word List</string>
     <string name="drawer_new">Learn New Words</string>
     <string name="drawer_random">Practice Random Words</string>
-    <string name="drawer_list">Word List</string>
     <string name="drawer_stats">Statistics</string>
-    <string name="action_sort">Sort by</string>
-    <string name="action_exercisetype">Exercise type</string>
-    <string name="sortby_title">Sort by</string>
-    <string name="exercisetype_title">Exercise type</string>
-    <string name="navigation_drawer_open">Open Navigation Drawer</string>
     <string name="navigation_drawer_close">Close Navigation Drawer</string>
-
+    <string name="navigation_drawer_open">Open Navigation Drawer</string>
+    <string name="search_menu_title">Search</string>
+    <string name="selectiontype_title">Selection type</string>
+    <string name="sortby_title">Sort by</string>
 </resources>

@@ -9,13 +9,15 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.RecyclerView.LayoutManager;
 import android.support.v7.widget.SearchView;
-import android.util.Log;
+import android.support.v7.widget.SearchView.OnQueryTextListener;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
@@ -24,13 +26,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.regex.Matcher;
+import java.util.Iterator;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 class MyViewHolder extends RecyclerView.ViewHolder {
-    public TextView mTextView0, mTextView1, mTextViewPeriod;
+    public TextView mTextView0;
+    public TextView mTextView1;
+    public TextView mTextViewPeriod;
     public Button removeButton;
+
     public MyViewHolder(View view, TextView _mTextView0, TextView _mTextView1, TextView _mTextViewPeriod, Button _removeButton) {
         super(view);
         mTextView0 = _mTextView0;
@@ -41,21 +46,17 @@ class MyViewHolder extends RecyclerView.ViewHolder {
 }
 
 class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
-
     private static final String TAG = RecycleViewAdapter.class.getName();
-
     MyApplication app;
     private Pattern filterPattern = null;
     private ArrayList<Pair> mDataset;
     private HashSet<Pair> mDatasetUnfiltered;
 
-    // Provide a suitable constructor (depends on the kind of dataset)
     public RecycleViewAdapter(MyApplication _app, HashSet<Pair> myDataset, LifecycleOwner lifecycleOwner) {
         app = _app;
         filterPattern = Pattern.compile("");
         setDataset(myDataset);
         app.sortByPeriod.observe(lifecycleOwner, new Observer<Boolean>() {
-            @Override
             public void onChanged(@Nullable Boolean sortByHardness) {
                 sortMDataset();
                 notifyDataSetChanged();
@@ -64,26 +65,27 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     }
 
     private void sortMDataset() {
-        if (app.sortByPeriod.getValue() == false) {
+        if (!(app.sortByPeriod.getValue()).booleanValue()) {
             Collections.sort(mDataset, new Comparator<Pair>() {
-                @Override
                 public int compare(Pair l, Pair r) {
                     return SwedishLexicographicalComparator.compare(l.first, r.first);
                 }
             });
-        }
-        else {
+        } else {
             Collections.sort(mDataset, new Comparator<Pair>() {
-                @Override
                 public int compare(Pair l, Pair r) {
-                    if (l.period == 0 && r.period > 0)
+                    if (l.period == 0 && r.period > 0) {
                         return 1;
-                    if (r.period == 0 && l.period > 0)
+                    }
+                    if (r.period == 0 && l.period > 0) {
                         return -1;
-                    if (l.period > r.period)
+                    }
+                    if (l.period > r.period) {
                         return 1;
-                    else if (r.period > l.period)
+                    }
+                    if (r.period > l.period) {
                         return -1;
+                    }
                     return 0;
                 }
             });
@@ -98,8 +100,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     void setFilterPattern(String pattern) {
         try {
             filterPattern = Pattern.compile(pattern);
-        }
-        catch (PatternSyntaxException e) {
+        } catch (PatternSyntaxException e) {
             filterPattern = null;
         }
         filter();
@@ -108,140 +109,102 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     public void filter() {
         mDataset = new ArrayList<>();
         if (filterPattern != null) {
-            for (Pair p : mDatasetUnfiltered) {
-                if (filterPattern.matcher(p.first).find() ||
-                        filterPattern.matcher(p.second).find())
+            Iterator it = mDatasetUnfiltered.iterator();
+            while (it.hasNext()) {
+                Pair p = (Pair) it.next();
+                if (filterPattern.matcher(p.first).find() || filterPattern.matcher(p.second).find()) {
                     mDataset.add(p);
+                }
             }
         }
         sortMDataset();
         notifyDataSetChanged();
     }
 
-    // Create new views (invoked by the layout manager)
-    @Override
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        // create a new view
-        View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.word_list_item, parent, false);
-        MyViewHolder vh = new MyViewHolder(
-                v,
-                (TextView)v.findViewById(R.id.textView0),
-                (TextView)v.findViewById(R.id.textView1),
-                (TextView)v.findViewById(R.id.text_view_period),
-                (Button)v.findViewById(R.id.removeButton));
-        return vh;
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.word_list_item, parent, false);
+        MyViewHolder myViewHolder = new MyViewHolder(v, (TextView) v.findViewById(R.id.textView0), (TextView) v.findViewById(R.id.textView1), (TextView) v.findViewById(R.id.text_view_period), (Button) v.findViewById(R.id.removeButton));
+        return myViewHolder;
     }
 
-    // Replace the contents of a view (invoked by the layout manager)
-    @Override
     public void onBindViewHolder(MyViewHolder holder, final int position) {
-        holder.mTextView0.setText(mDataset.get(position).first);
-        holder.mTextView1.setText(mDataset.get(position).second);
-        int period = mDataset.get(position).period;
-        holder.mTextViewPeriod.setText((period>0)?String.valueOf(period):"\u221E"); // \u221E is the infinity symbol
-
-        holder.removeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
+        holder.mTextView0.setText((mDataset.get(position)).first);
+        holder.mTextView1.setText((mDataset.get(position)).second);
+        int period = (mDataset.get(position)).period;
+        holder.mTextViewPeriod.setText(period > 0 ? String.valueOf(period) : "∞");
+        holder.removeButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
-                app.RemovePair(mDataset.get(position));
+                RecycleViewAdapter.this.app.RemovePair(RecycleViewAdapter.this.mDataset.get(position));
+                RecycleViewAdapter recycleViewAdapter = RecycleViewAdapter.this;
+                recycleViewAdapter.setDataset(recycleViewAdapter.app.wlist);
             }
         });
     }
 
-    // Return the size of your dataset (invoked by the layout manager)
-    @Override
     public int getItemCount() {
         return mDataset.size();
     }
 }
 
 public class WordListFragment extends Fragment {
-
-    final static String TAG = WordListFragment.class.getName();
-
+    static final String TAG = WordListFragment.class.getName();
+    private final int ADDWORD_REQUEST_CODE = 1;
     MyApplication app;
-    RecyclerView mRecyclerView;
-    RecycleViewAdapter mAdapter;
-    RecyclerView.LayoutManager mLayoutManager;
     FloatingActionButton fab;
+    RecycleViewAdapter mAdapter;
+    LayoutManager mLayoutManager;
+    RecyclerView mRecyclerView;
     SearchView searchView;
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
         View rootView = inflater.inflate(R.layout.fragment_word_list, container, false);
-
-        app = ((MyApplication)getActivity().getApplicationContext());
-
-        fab = (FloatingActionButton) rootView.findViewById(R.id.floatingActionButton);
-
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
+        app = (MyApplication) getActivity().getApplicationContext();
+        fab = rootView.findViewById(R.id.floatingActionButton);
+        fab.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
-                Intent intent = new Intent(getContext(), AddWordActivity.class);
-                startActivity(intent);
+                startActivityForResult(new Intent(WordListFragment.this.getContext(), AddWordActivity.class), ADDWORD_REQUEST_CODE);
             }
         });
-
-        mRecyclerView = (RecyclerView) rootView.findViewById(R.id.word_list);
-
-        // use this setting to improve performance if you know that changes
-        // in content do not change the layout size of the RecyclerView
+        mRecyclerView = rootView.findViewById(R.id.word_list);
         mRecyclerView.setHasFixedSize(true);
-
-        // use a linear layout manager
         mLayoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(mLayoutManager);
-
-        mAdapter = new RecycleViewAdapter(app, app.wlist, this);
+        MyApplication myApplication = app;
+        mAdapter = new RecycleViewAdapter(myApplication, myApplication.wlist, this);
         mRecyclerView.setAdapter(mAdapter);
-
-        app.wlistObservers.add(new Runnable() {
-            @Override
-            public void run() {
-                mAdapter.setDataset(app.wlist);
-            }
-        });
-
         searchView = rootView.findViewById(R.id.action_search);
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
+        searchView.setOnQueryTextListener(new OnQueryTextListener() {
             public boolean onQueryTextSubmit(String query) {
                 mAdapter.setFilterPattern(query);
                 return true;
             }
 
-            @Override
             public boolean onQueryTextChange(String newText) {
                 mAdapter.setFilterPattern(newText);
                 return true;
             }
         });
-
         return rootView;
     }
 
-    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == ADDWORD_REQUEST_CODE) {
+            mAdapter.setDataset(app.wlist);
+        }
+    }
+
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         inflater.inflate(R.menu.menu_wordlist, menu);
     }
 
-    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        if (id == R.id.action_sort) {
-            new SortByDialog().show(getFragmentManager(), "sortby");
-            return true;
-        }
-        else
+        if (item.getItemId() != R.id.action_sort) {
             return super.onOptionsItemSelected(item);
+        }
+        new SortByDialog().show(getFragmentManager(), "sortby");
+        return true;
     }
 }

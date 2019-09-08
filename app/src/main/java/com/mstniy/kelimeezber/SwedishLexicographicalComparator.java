@@ -3,7 +3,7 @@ package com.mstniy.kelimeezber;
 import java.util.HashMap;
 
 public class SwedishLexicographicalComparator {
-    public static int compare(String a, String b) { // < comparsion
+    public static int compare(String a, String b) {
         HashMap<Character, Integer> charMap = new HashMap<>();
         charMap.put('a',  0);
         charMap.put('ä',  0);
@@ -37,16 +37,16 @@ public class SwedishLexicographicalComparator {
         charMap.put('-', 26);
         charMap.put('.', 27);
 
-        int minLength = a.length(); // Awkward. API level 23 doesn't have integer min?
+        int minLength = a.length();
         if (b.length() < minLength)
             minLength = b.length();
-        for (int i=0; i<minLength; i++) {
-            Integer codeA = charMap.get(Character.toLowerCase(a.charAt(i)));
-            Integer codeB = charMap.get(Character.toLowerCase(b.charAt(i)));
+        for (int i = 0; i < minLength; i++) {
+            Integer codeA = charMap.get(Character.valueOf(Character.toLowerCase(a.charAt(i))));
+            Integer codeB = charMap.get(Character.valueOf(Character.toLowerCase(b.charAt(i))));
             if (codeA == null)
-                codeA = charMap.size();
+                codeA = Integer.valueOf(charMap.size());
             if (codeB == null)
-                codeB = charMap.size();
+                codeB = Integer.valueOf(charMap.size());
             if (codeA != codeB)
                 return (codeA < codeB)?-1:1;
         }

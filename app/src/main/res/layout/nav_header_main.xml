@@ -1,24 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/nav_header"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@color/colorAccent"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?attr/selectableItemBackgroundBorderless"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:theme="@style/ThemeOverlay.AppCompat.Dark"
     android:gravity="bottom"
     android:orientation="vertical"
+    android:id="@+id/nav_header"
+    android:background="@color/colorAccent"
     android:padding="16dp"
-    android:theme="@style/ThemeOverlay.AppCompat.Dark">
-
+    android:focusable="true"
+    android:clickable="true"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:foreground="?attr/selectableItemBackgroundBorderless">
     <TextView
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textSize="24sp"
         android:id="@+id/nav_header_textView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:paddingTop="16dp"
         android:paddingBottom="16dp"
-        android:text="@string/app_name"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        android:textSize="24sp" />
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"/>
 </LinearLayout>
