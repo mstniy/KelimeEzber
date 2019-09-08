@@ -17,6 +17,10 @@ class Fraction {
 }
 
 class DatabaseHelper {
+    private static final String TAG = DatabaseHelper.class.getName();
+    static final int DEFAULT_PAIRQUEUE_LENGTH = 512;
+    private static final int DB_VERSION = 1;
+
     private static final String COLUMN_CURRENT_PAIRQUEUE_INDEX = "current_pairqueue_index";
     private static final String COLUMN_FIRST = "first";
     private static final String COLUMN_HARDNESS = "hardness";
@@ -26,15 +30,14 @@ class DatabaseHelper {
     private static final String COLUMN_RANDOM_PASS_COUNTER = "random_pass_counter";
     private static final String COLUMN_RANDOM_PASS_OUTOF = "random_pass_outof";
     private static final String COLUMN_SECOND = "second";
+    private static final String COLUMN_AUDIO_DATASET_PATH = "audio_dataset_path";
     private static final String CREATE_KELIMELER = "CREATE TABLE IF NOT EXISTS kelimeler(id INTEGER PRIMARY KEY AUTOINCREMENT,first TEXT,second TEXT,hardness REAL,period INTEGER)";
     private static final String CREATE_PAIRQUEUE = "CREATE TABLE IF NOT EXISTS pair_queue(id INTEGER PRIMARY KEY AUTOINCREMENT,mapped_id INTEGER,FOREIGN KEY (mapped_id) REFERENCES kelimeler(id) ON UPDATE SET NULL ON DELETE SET NULL)";
-    private static final String CREATE_VARIABLES = "CREATE TABLE IF NOT EXISTS variables(id INTEGER PRIMARY KEY AUTOINCREMENT,current_pairqueue_index INTEGER,random_pass_counter INTEGER,random_pass_outof INTEGER)";
+    private static final String CREATE_VARIABLES = "CREATE TABLE IF NOT EXISTS variables(id INTEGER PRIMARY KEY AUTOINCREMENT,current_pairqueue_index INTEGER,random_pass_counter INTEGER,random_pass_outof INTEGER,audio_dataset_path TEXT)";
     private static final String DATABASE_NAME = "kelimeezber_db";
-    static final int DEFAULT_PAIRQUEUE_LENGTH = 512;
     private static final String TABLE_KELIMELER = "kelimeler";
     private static final String TABLE_PAIRQUEUE = "pair_queue";
     private static final String TABLE_VARIABLES = "variables";
-    private static final String TAG = DatabaseHelper.class.getName();
 
     private SQLiteDatabase db;
 
@@ -44,12 +47,14 @@ class DatabaseHelper {
         db.rawQuery("PRAGMA foreign_keys = ON", null);
         if (db.rawQuery("select DISTINCT tbl_name from sqlite_master where tbl_name = 'kelimeler'", null).getCount() == 0)
             CreateDB();
+        else if (db.needUpgrade(DB_VERSION))
+            UpgradeDB(db.getVersion());
         else
-            MaybeUpgradeDB();
+            Log.v(TAG, "No need to upgrade the existing DB, already at version " + DB_VERSION);
     }
 
     private void CreateDB() {
-        Log.d(TAG, "Creating DB");
+        Log.v(TAG, "Creating DB");
         db.execSQL(CREATE_KELIMELER);
         db.execSQL(CREATE_VARIABLES);
         db.execSQL(CREATE_PAIRQUEUE);
@@ -57,16 +62,24 @@ class DatabaseHelper {
             setPairQueueElement(i, (long)0);
         }
         setCurrentQueueIndex(0);
+        db.setVersion(DB_VERSION);
     }
 
-    private void MaybeUpgradeDB() {
-        if (db.query(TABLE_VARIABLES, null, null, null, null, null, null, "0").getColumnIndex(COLUMN_RANDOM_PASS_COUNTER) != -1) {
-            Log.d(TAG, "DB exists, no need to upgrade");
-            return;
+    private void UpgradeDB(int oldVersion) {
+        if (oldVersion == 0) {
+            From0to1();
+            oldVersion = 1;
         }
-        Log.d(TAG, "Upgrading DB");
-        db.execSQL("ALTER TABLE variables ADD random_pass_counter INTEGER DEFAULT 0;");
-        db.execSQL("ALTER TABLE variables ADD random_pass_outof INTEGER DEFAULT 0;");
+        if (oldVersion == 1)
+            return ;
+        else
+            throw new RuntimeException("Unrecognized DB version.");
+    }
+
+    private void From0to1() {
+        Log.v(TAG, "Upgrading the existing DB from version 0 to 1");
+        db.execSQL("ALTER TABLE " + TABLE_VARIABLES + " ADD COLUMN " + COLUMN_AUDIO_DATASET_PATH + " TEXT");
+        db.setVersion(1);
     }
 
     public long insertPair(Pair p) {
@@ -165,10 +178,19 @@ class DatabaseHelper {
         return new Fraction(counter, outof);
     }
 
+    public String getAudioDatasetPath() {
+        Cursor cursor = db.query(TABLE_VARIABLES, new String[]{COLUMN_ID, COLUMN_AUDIO_DATASET_PATH}, null, null, null, null, null, null);
+        int ciADP = cursor.getColumnIndexOrThrow(COLUMN_AUDIO_DATASET_PATH);
+        cursor.moveToFirst();
+        String path = cursor.getString(ciADP);
+        cursor.close();
+        return path;
+    }
+
     public void setCurrentQueueIndex(int index) {
         ContentValues values = new ContentValues();
         values.put(COLUMN_CURRENT_PAIRQUEUE_INDEX, Integer.valueOf(index));
-        if (db.update(TABLE_VARIABLES, values, "id=?", new String[]{"1"}) == 0)
+        if (db.update(TABLE_VARIABLES, values, COLUMN_ID + "=?", new String[]{"1"}) == 0)
             db.insert(TABLE_VARIABLES, null, values);
     }
 
@@ -176,19 +198,26 @@ class DatabaseHelper {
         ContentValues values = new ContentValues();
         values.put(COLUMN_RANDOM_PASS_COUNTER, fraction.a);
         values.put(COLUMN_RANDOM_PASS_OUTOF, fraction.b);
-        if (db.update(TABLE_VARIABLES, values, "id=?", new String[]{"1"}) == 0)
+        if (db.update(TABLE_VARIABLES, values, COLUMN_ID + "=?", new String[]{"1"}) == 0)
             db.insert(TABLE_VARIABLES, null, values);
     }
 
     public void setPairQueueElement(int index, Long mappedId) {
         ContentValues values = new ContentValues();
-        int i = (mappedId.longValue() > 0 ? 1 : (mappedId.longValue() == 0 ? 0 : -1));
-        String str = COLUMN_MAPPED_ID;
-        if (i != 0)
-            values.put(str, mappedId);
+        if (mappedId != 0)
+            values.put(COLUMN_MAPPED_ID, mappedId);
         else
-            values.putNull(str);
-        if (db.update(TABLE_PAIRQUEUE, values, "id=?", new String[]{String.valueOf(index + 1)}) == 0)
+            values.putNull(COLUMN_MAPPED_ID);
+        String[] whereArgs = new String[]{String.valueOf(index + 1)};
+        if (0 == db.update(TABLE_PAIRQUEUE, values, COLUMN_ID + "=?", whereArgs))
             db.insert(TABLE_PAIRQUEUE, null, values);
+    }
+
+    public void setAudioDatasetPath(String path) {
+        Log.v(TAG, "Setting audio dataset path to \"" + path + "\"");
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_AUDIO_DATASET_PATH, path);
+        if (db.update(TABLE_VARIABLES, values, COLUMN_ID + "=?", new String[]{"1"}) != 1)
+            throw new RuntimeException("setAudioDatasetPath failed");
     }
 }

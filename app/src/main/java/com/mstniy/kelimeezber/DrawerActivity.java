@@ -1,11 +1,16 @@
 package com.mstniy.kelimeezber;
 
+import android.Manifest;
+import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.NavigationView.OnNavigationItemSelectedListener;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -28,6 +33,20 @@ public class DrawerActivity extends AppCompatActivity {
         } else if (fragment instanceof WordListFragment) {
             listFragment = (WordListFragment) fragment;
         }
+    }
+
+    public static boolean getExternalStoragePermission(Activity activity) {
+        if (ContextCompat.checkSelfPermission(activity,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(activity,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    0);
+            return false;
+        }
+
+        return true; // We return true even if the user has denied the permission so that a SecurityException will be thrown later on.
     }
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,5 +89,6 @@ public class DrawerActivity extends AppCompatActivity {
             getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment_frame, exerciseFragment).commit();
             navView.setCheckedItem(R.id.drawer_exercise);
         }
+        getExternalStoragePermission(this);
     }
 }

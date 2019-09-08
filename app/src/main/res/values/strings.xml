@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="action_selectiontype">Selection type</string>
+    <string name="action_datasetpath">Audio dataset path</string>
     <string name="action_sort">Sort by</string>
     <string name="app_name">KelimeEzber</string>
     <string name="drawer_exercise">Exercise</string>

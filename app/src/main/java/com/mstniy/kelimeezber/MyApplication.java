@@ -2,9 +2,14 @@ package com.mstniy.kelimeezber;
 
 import android.app.Application;
 import android.arch.lifecycle.MutableLiveData;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Log;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -14,7 +19,8 @@ public class MyApplication extends Application implements OnInitListener {
     static final int MaxWordPeriod = 256;
     private static final String TAG = MyApplication.class.getName();
     final double FWD_PROBABILITY = 0.5;
-    final double MC_PROBABILITY = 0.5;
+    final double MC_PROBABILITY = 0.33;
+    final double LISTENING_PROBABILITY = 0.33;
     boolean currentFwd;
     Pair currentPair = null;
     int currentQueueIndex;
@@ -28,11 +34,13 @@ public class MyApplication extends Application implements OnInitListener {
     int selectionType = 0;
     MutableLiveData<Boolean> sortByPeriod = new MutableLiveData<>();
     TextToSpeech tts;
-    boolean ttsMuted = true;
+    boolean isMuted = true;
     boolean ttsSupported = false;
     HashSet<Pair> wlist = new HashSet<>();
     HashMap<String, HashSet<String>> wordTranslationsBwd = new HashMap<>();
     HashMap<String, HashSet<String>> wordTranslationsFwd = new HashMap<>();
+    String audioDatasetPath = null;
+    MediaPlayer mediaPlayer = new MediaPlayer();
 
     public void onInit(int status) {
         if (status != 0 || tts.setLanguage(new Locale("sv", "SE")) == -2) {
@@ -147,50 +155,46 @@ public class MyApplication extends Application implements OnInitListener {
         }
         currentQueueIndex = helper.getCurrentQueueIndex();
         randomPassFraction = helper.getRandomPassFraction();
+        audioDatasetPath = helper.getAudioDatasetPath();
         return true;
     }
 
     void StartRound() {
-        int i = selectionType;
-        if (i == 0) {
-            Pair[] pairArr = pairQueue;
-            int i2 = currentQueueIndex;
-            if (pairArr[i2] == null) {
-                currentPair = PairChooser.ChoosePairRandom(this);
-            } else {
-                currentPair = pairArr[i2];
-            }
-            /*StringBuilder sb = new StringBuilder();
-            sb.append("currentQueueIndex: ");
-            sb.append(currentQueueIndex);
-            Log.d(TAG, sb.toString());
-            StringBuilder pairQueueDebugLine = new StringBuilder();
-            int i3 = currentQueueIndex;
-            int j = 0;
-            while (j < 10) {
-                if (pairQueue[i3] == null) {
-                    pairQueueDebugLine.append("null ");
-                } else {
-                    StringBuilder sb2 = new StringBuilder();
-                    sb2.append("\"");
-                    sb2.append(pairQueue[i3].first);
-                    sb2.append("\" ");
-                    pairQueueDebugLine.append(sb2.toString());
-                }
-                j++;
-                i3 = (i3 + 1) % pairQueue.length;
-            }
-            Log.d(TAG, pairQueueDebugLine.toString());*/
-        } else if (i == 1) {
-            currentPair = PairChooser.ChoosePairNew(this);
-        } else if (i == 2) {
-            currentPair = PairChooser.ChoosePairRandom(this);
+        double randomDouble = new Random().nextDouble();
+        if (audioDatasetPath != null && isMuted ==false) {
+            if (randomDouble < MC_PROBABILITY)
+                exerciseType = ExerciseType.MC;
+            else if (randomDouble < MC_PROBABILITY + LISTENING_PROBABILITY)
+                exerciseType = ExerciseType.Listening;
+            else
+                exerciseType = ExerciseType.Writing;
         }
-        exerciseType = new Random().nextDouble() < MC_PROBABILITY ? ExerciseType.MC : ExerciseType.Writing;
-        currentFwd = new Random().nextDouble() <= FWD_PROBABILITY;
-        isPass = true;
-        ExerciseFragment exerciseFragment2 = exerciseFragment;
-        if (exerciseFragment2 != null && exerciseFragment2.isAdded()) {
+        else { // If no audio dataset has been set or we are muted, distribute the probability of listening exercises to MC and Writing exercises.
+            if (randomDouble < MC_PROBABILITY + LISTENING_PROBABILITY/2)
+                exerciseType = ExerciseType.MC;
+            else
+                exerciseType = ExerciseType.Writing;
+        }
+        if (exerciseType == ExerciseType.Listening) {
+            currentPair = null;
+        }
+        else {
+            if (selectionType == 0) {
+                Pair[] pairArr = pairQueue;
+                int i2 = currentQueueIndex;
+                if (pairArr[i2] == null)
+                    currentPair = PairChooser.ChoosePairRandom(this);
+                else
+                    currentPair = pairArr[i2];
+            } else if (selectionType == 1) {
+                currentPair = PairChooser.ChoosePairNew(this);
+            } else if (selectionType == 2) {
+                currentPair = PairChooser.ChoosePairRandom(this);
+            }
+            currentFwd = new Random().nextDouble() <= FWD_PROBABILITY;
+            isPass = true;
+        }
+        if (exerciseFragment != null && exerciseFragment.isAdded()) {
             exerciseFragment.ChangeExercise(currentPair, exerciseType);
         }
     }
@@ -217,40 +221,59 @@ public class MyApplication extends Application implements OnInitListener {
     }
 
     void FinishRound() {
-        if (isPass) {
-            currentPair.period *= 2;
-            if (currentPair.period > MaxWordPeriod) {
-                currentPair.period = 0;
+        if (exerciseType != ExerciseType.Listening) {
+            if (isPass) {
+                currentPair.period *= 2;
+                if (currentPair.period > MaxWordPeriod) {
+                    currentPair.period = 0;
+                }
+            } else if (currentPair.period == 0) {
+                currentPair.period = MaxWordPeriod;
+            } else if (currentPair.period > 1) {
+                currentPair.period /= 2;
             }
-        } else if (currentPair.period == 0) {
-            currentPair.period = MaxWordPeriod;
-        } else if (currentPair.period > 1) {
-            currentPair.period /= 2;
-        }
-        HardnessPeriodChanged(currentPair);
-        if (selectionType == 2 || pairQueue[currentQueueIndex] == null) {
-            randomPassFraction.a += isPass ? 1 : 0;
-            randomPassFraction.b++;
-            helper.setRandomPassFraction(randomPassFraction);
-        }
-        if (selectionType == 0) {
-            Pair[] pairArr = pairQueue;
-            int i = currentQueueIndex;
-            pairArr[i] = null;
-            helper.setPairQueueElement(i, Long.valueOf(0));
-            if (currentPair.period != 0) {
-                InsertToPairQueue((currentQueueIndex + currentPair.period) % pairQueue.length, currentPair);
+            HardnessPeriodChanged(currentPair);
+            if (selectionType == 2 || pairQueue[currentQueueIndex] == null) {
+                randomPassFraction.a += isPass ? 1 : 0;
+                randomPassFraction.b++;
+                helper.setRandomPassFraction(randomPassFraction);
             }
-            currentQueueIndex = (currentQueueIndex + 1) % pairQueue.length;
-            helper.setCurrentQueueIndex(currentQueueIndex);
+            if (selectionType == 0) {
+                Pair[] pairArr = pairQueue;
+                int i = currentQueueIndex;
+                pairArr[i] = null;
+                helper.setPairQueueElement(i, Long.valueOf(0));
+                if (currentPair.period != 0) {
+                    InsertToPairQueue((currentQueueIndex + currentPair.period) % pairQueue.length, currentPair);
+                }
+                currentQueueIndex = (currentQueueIndex + 1) % pairQueue.length;
+                helper.setCurrentQueueIndex(currentQueueIndex);
+            }
         }
         roundId++;
         StartRound();
     }
 
     void speak(String s) {
-        if (ttsSupported && !ttsMuted) {
+        if (ttsSupported && !isMuted) {
             tts.speak(s, 0, null);
+        }
+    }
+
+    void playAudio(Uri uri) {
+        if (!isMuted) {
+            mediaPlayer.reset();
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            try {
+                mediaPlayer.setDataSource(this, uri);
+                mediaPlayer.prepare();
+            }
+            catch (IOException e) {
+                Log.e(TAG, e.getMessage());
+                Log.e(TAG, e.getStackTrace().toString());
+                return ;
+            }
+            mediaPlayer.start();
         }
     }
 }
