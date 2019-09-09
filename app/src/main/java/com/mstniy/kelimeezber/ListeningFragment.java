@@ -99,6 +99,20 @@ public class ListeningFragment extends Fragment {
         newRound(ats.get(new Random().nextInt(ats.size())));
     }
 
+    TextView CreateButton(String text) {
+        TextView b = new TextView(getContext());
+        b.setText(text);
+        b.setBackgroundResource(android.R.drawable.btn_default);
+        b.setTextSize(20.0f);
+        b.setGravity(Gravity.CENTER);
+        b.setOnClickListener(new OnClickListener() {
+            public void onClick(View v) {
+                ButtonClicked((TextView) v);
+            }
+        });
+        return b;
+    }
+
     void newRound(AudioAndWords _p) {
         if (created == false)
             return ;
@@ -111,26 +125,15 @@ public class ListeningFragment extends Fragment {
         ArrayList<String> shuffledWords = new ArrayList<>();
         shuffledWords.addAll(p.words);
         Collections.shuffle(shuffledWords);
-        for (String word : shuffledWords) {
-            TextView b = new TextView(getContext());
-            b.setText(word);
-            b.setBackgroundResource(android.R.drawable.btn_default);
-            b.setTextSize(20.0f);
-            b.setGravity(Gravity.CENTER);
-            b.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    ButtonClicked((TextView) v);
-                }
-            });
-            wordTableOptions.addView(b);
-        }
+        for (String word : shuffledWords)
+            wordTableOptions.addView(CreateButton(word));
         app.playAudio(p.audio);
     }
 
     void ButtonClicked(TextView button) {
-        if (wordTableOptions.indexOfChild(button) != -1) {
-            wordTableOptions.removeView(button);
-            wordTableInput.addView(button);
+        if (wordTableInput.indexOfChild(button) == -1) {
+            button.setEnabled(false);
+            wordTableInput.addView(CreateButton(button.getText().toString()));
 
             if (wordTableInput.getChildCount() == p.words.size()) {
                 boolean correctAnswer = true;
@@ -145,7 +148,14 @@ public class ListeningFragment extends Fragment {
 
         } else {
             wordTableInput.removeView(button);
-            wordTableOptions.addView(button);
+            final String buttonText = button.getText().toString();
+            for (int i=0; i<wordTableOptions.getChildCount(); i++) {
+                TextView child = (TextView) wordTableOptions.getChildAt(i);
+                if (child.getText().toString().equals(buttonText)) {
+                    child.setEnabled(true);
+                    break;
+                }
+            }
             // Note that a round can only end after the user clicks on one of the word options, thus adding it to the input box.
         }
     }
