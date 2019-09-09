@@ -15,12 +15,15 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Random;
 
+enum SelectionMethod {
+    SMART, NEW, RANDOM, LISTENING
+}
+
 public class MyApplication extends Application implements OnInitListener {
     static final int MaxWordPeriod = 256;
     private static final String TAG = MyApplication.class.getName();
     final double FWD_PROBABILITY = 0.5;
-    final double MC_PROBABILITY = 0.33;
-    final double LISTENING_PROBABILITY = 0.33;
+    final double MC_PROBABILITY = 0.5;
     boolean currentFwd;
     Pair currentPair = null;
     int currentQueueIndex;
@@ -31,7 +34,7 @@ public class MyApplication extends Application implements OnInitListener {
     Pair[] pairQueue;
     Fraction randomPassFraction;
     int roundId = 0;
-    int selectionType = 0;
+    SelectionMethod selectionMethod = SelectionMethod.SMART;
     MutableLiveData<Boolean> sortByPeriod = new MutableLiveData<>();
     TextToSpeech tts;
     boolean isMuted = true;
@@ -160,37 +163,28 @@ public class MyApplication extends Application implements OnInitListener {
     }
 
     void StartRound() {
-        double randomDouble = new Random().nextDouble();
-        if (audioDatasetPath != null && isMuted ==false) {
-            if (randomDouble < MC_PROBABILITY)
-                exerciseType = ExerciseType.MC;
-            else if (randomDouble < MC_PROBABILITY + LISTENING_PROBABILITY)
-                exerciseType = ExerciseType.Listening;
-            else
-                exerciseType = ExerciseType.Writing;
-        }
-        else { // If no audio dataset has been set or we are muted, distribute the probability of listening exercises to MC and Writing exercises.
-            if (randomDouble < MC_PROBABILITY + LISTENING_PROBABILITY/2)
-                exerciseType = ExerciseType.MC;
-            else
-                exerciseType = ExerciseType.Writing;
-        }
-        if (exerciseType == ExerciseType.Listening) {
+        if (selectionMethod == SelectionMethod.LISTENING) {
+            exerciseType = ExerciseType.Listening;
             currentPair = null;
         }
         else {
-            if (selectionType == 0) {
+            double randomDouble = new Random().nextDouble();
+            if (randomDouble < MC_PROBABILITY)
+                exerciseType = ExerciseType.MC;
+            else
+                exerciseType = ExerciseType.Writing;
+            if (selectionMethod == SelectionMethod.SMART) {
                 Pair[] pairArr = pairQueue;
                 int i2 = currentQueueIndex;
                 if (pairArr[i2] == null)
                     currentPair = PairChooser.ChoosePairRandom(this);
                 else
                     currentPair = pairArr[i2];
-            } else if (selectionType == 1) {
-                currentPair = PairChooser.ChoosePairNew(this);
-            } else if (selectionType == 2) {
-                currentPair = PairChooser.ChoosePairRandom(this);
             }
+            else if (selectionMethod == SelectionMethod.NEW)
+                currentPair = PairChooser.ChoosePairNew(this);
+            else if (selectionMethod == SelectionMethod.RANDOM)
+                currentPair = PairChooser.ChoosePairRandom(this);
             currentFwd = new Random().nextDouble() <= FWD_PROBABILITY;
             isPass = true;
         }
@@ -233,12 +227,12 @@ public class MyApplication extends Application implements OnInitListener {
                 currentPair.period /= 2;
             }
             HardnessPeriodChanged(currentPair);
-            if (selectionType == 2 || pairQueue[currentQueueIndex] == null) {
+            if (selectionMethod == SelectionMethod.RANDOM || pairQueue[currentQueueIndex] == null) {
                 randomPassFraction.a += isPass ? 1 : 0;
                 randomPassFraction.b++;
                 helper.setRandomPassFraction(randomPassFraction);
             }
-            if (selectionType == 0) {
+            if (selectionMethod == SelectionMethod.SMART) {
                 Pair[] pairArr = pairQueue;
                 int i = currentQueueIndex;
                 pairArr[i] = null;

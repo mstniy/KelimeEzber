@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="action_selectiontype">Selection type</string>
+    <string name="action_selectionmethod">Selection method</string>
     <string name="action_datasetpath">Audio dataset path</string>
     <string name="action_sort">Sort by</string>
     <string name="app_name">KelimeEzber</string>
@@ -12,6 +12,6 @@
     <string name="navigation_drawer_close">Close Navigation Drawer</string>
     <string name="navigation_drawer_open">Open Navigation Drawer</string>
     <string name="search_menu_title">Search</string>
-    <string name="selectiontype_title">Selection type</string>
+    <string name="selectionmethod_title">Selection method</string>
     <string name="sortby_title">Sort by</string>
 </resources>

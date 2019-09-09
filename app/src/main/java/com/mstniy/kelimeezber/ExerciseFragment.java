@@ -78,8 +78,8 @@ public class ExerciseFragment extends Fragment {
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_selectiontype) {
-            new SelectionTypeDialog().show(getFragmentManager(), "selectiontype");
+        if (item.getItemId() == R.id.action_selectionmethod) {
+            new SelectionMethodDialog().show(getFragmentManager(), "selectionmethod");
             return true;
         }
         else if (item.getItemId() == R.id.action_datasetpath) {
@@ -101,6 +101,8 @@ public class ExerciseFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == PICKDATASET_REQUEST_CODE) {
+            if (data == null) // User cancelled the operation
+                return ;
             String path = data.getData().getPath();
             path = getRealPath(path);
             if (path == null) {

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:aapt="http://schemas.android.com/aapt">
     <item
-        android:id="@+id/action_selectiontype"
+        android:id="@+id/action_selectionmethod"
         android:orderInCategory="100"
-        android:title="@string/action_selectiontype"
+        android:title="@string/action_selectionmethod"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_datasetpath"
