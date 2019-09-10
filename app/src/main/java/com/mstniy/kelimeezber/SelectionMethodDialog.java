@@ -26,10 +26,6 @@ public class SelectionMethodDialog extends DialogFragment {
                         Toast.makeText(getContext(), "No dataset specified", Toast.LENGTH_SHORT).show();
                         return ;
                     }
-                    else if (app.isMuted) {
-                        Toast.makeText(getContext(), "The app is muted", Toast.LENGTH_SHORT).show();
-                        return ;
-                    }
                     else
                         sm = SelectionMethod.LISTENING;
                 }

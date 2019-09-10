@@ -151,7 +151,7 @@ public class ListeningFragment extends Fragment {
             final String buttonText = button.getText().toString();
             for (int i=0; i<wordTableOptions.getChildCount(); i++) {
                 TextView child = (TextView) wordTableOptions.getChildAt(i);
-                if (child.getText().toString().equals(buttonText)) {
+                if (child.getText().toString().equals(buttonText) && child.isEnabled() == false) {
                     child.setEnabled(true);
                     break;
                 }
