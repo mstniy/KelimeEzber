@@ -2,6 +2,8 @@ package com.mstniy.kelimeezber;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -16,18 +18,19 @@ import com.opencsv.CSVReader;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class AudioAndWords {
-    Uri audio;
+class AudioAndWords implements Serializable {
+    String audioPath;
     ArrayList<String> words;
     String sentence;
-    AudioAndWords(Uri _audio, ArrayList<String> _words, String _sentence) {
-        audio = _audio;
+    AudioAndWords(String _audioPath, ArrayList<String> _words, String _sentence) {
+        audioPath = _audioPath;
         words = _words;
         sentence = _sentence;
     }
@@ -64,20 +67,19 @@ public class ListeningFragment extends Fragment {
                 ArrayList<String> words = tokenizeWords(sentence);
                 if (words.size() < MINIMUM_SENTENCE_LENGTH_IN_WORDS)
                     continue;
-                Uri uri = Uri.parse(app.audioDatasetPath + "/clips/" + line[1]);
-                ats.add(new AudioAndWords(uri, words, sentence));
+                String path = app.audioDatasetPath + "/clips/" + line[1];
+                ats.add(new AudioAndWords(path, words, sentence));
             }
         }
         catch (FileNotFoundException e) {
             throw new RuntimeException("validated.tsv not found in the audio dataset path.");
         }
         created = true;
-        newRound();
         return rootView;
     }
 
     void speak() {
-        app.playAudio(p.audio);
+        app.playAudio(p.audioPath);
     }
 
     ArrayList<String> tokenizeWords(String sentence) {
@@ -127,7 +129,7 @@ public class ListeningFragment extends Fragment {
         Collections.shuffle(shuffledWords);
         for (String word : shuffledWords)
             wordTableOptions.addView(CreateButton(word));
-        app.playAudio(p.audio);
+        app.playAudio(p.audioPath);
     }
 
     void ButtonClicked(TextView button) {
@@ -162,5 +164,57 @@ public class ListeningFragment extends Fragment {
 
     void HintButtonClicked() {
         hintView.setText(p.sentence);
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putSerializable("p", p);
+
+        outState.putBoolean("hintVisible", hintView.getText().length() != 0);
+
+        String[] inputWords = new String[wordTableInput.getChildCount()];
+        for (int i=0; i<wordTableInput.getChildCount(); i++)
+            inputWords[i] = ((TextView)wordTableInput.getChildAt(i)).getText().toString();
+        outState.putCharSequenceArray("inputWords", inputWords);
+
+        String[] optionWords = new String[wordTableOptions.getChildCount()];
+        boolean[] optionsEnabled = new boolean[wordTableOptions.getChildCount()];
+        for (int i=0; i<wordTableOptions.getChildCount(); i++) {
+            optionWords[i] = ((TextView) wordTableOptions.getChildAt(i)).getText().toString();
+            optionsEnabled[i] = wordTableOptions.getChildAt(i).isEnabled();
+        }
+        outState.putCharSequenceArray("optionWords", optionWords);
+
+        outState.putBooleanArray("optionsEnabled", optionsEnabled);
+    }
+
+    @Override
+    public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
+        super.onViewStateRestored(savedInstanceState);
+        if (savedInstanceState == null) {
+            newRound();
+            return ;
+        }
+
+        p = (AudioAndWords) savedInstanceState.getSerializable("p");
+
+        if (savedInstanceState.getBoolean("hintVisible"))
+            HintButtonClicked();
+        else
+            hintView.setText("");
+
+        CharSequence[] inputWords = savedInstanceState.getCharSequenceArray("inputWords");
+        for (CharSequence inputWord : inputWords)
+            wordTableInput.addView(CreateButton(inputWord.toString()));
+
+        CharSequence[] optionWords = savedInstanceState.getCharSequenceArray("optionWords");
+        boolean[] optionsEnabled = savedInstanceState.getBooleanArray("optionsEnabled");
+        for (int i=0; i<optionWords.length; i++) {
+            TextView button = CreateButton(optionWords[i].toString());
+            button.setEnabled(optionsEnabled[i]);
+            wordTableOptions.addView(button);
+        }
     }
 }

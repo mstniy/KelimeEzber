@@ -3,6 +3,8 @@ package com.mstniy.kelimeezber;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -13,6 +15,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.MultiAutoCompleteTextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -69,6 +72,14 @@ public class ExerciseFragment extends Fragment {
         multipleChoiceFragment = new MCFragment();
         writingFragment = new WritingFragment();
         listeningFragment = new ListeningFragment();
+        if (savedInstanceState != null) {
+            if (app.exerciseType == ExerciseType.MC)
+                multipleChoiceFragment = (MCFragment) getChildFragmentManager().getFragment(savedInstanceState, "subFragment");
+            if (app.exerciseType == ExerciseType.Writing)
+                writingFragment = (WritingFragment) getChildFragmentManager().getFragment(savedInstanceState, "subFragment");
+            if (app.exerciseType == ExerciseType.Listening)
+                listeningFragment = (ListeningFragment) getChildFragmentManager().getFragment(savedInstanceState, "subFragment");
+        }
         ChangeExercise(app.currentPair, app.exerciseType);
         return rootView;
     }
@@ -154,5 +165,16 @@ public class ExerciseFragment extends Fragment {
         }
         else
             muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode_off, 0, 0, 0);
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (app.exerciseType == ExerciseType.MC)
+            getChildFragmentManager().putFragment(outState, "subFragment", multipleChoiceFragment);
+        else if (app.exerciseType == ExerciseType.Writing)
+            getChildFragmentManager().putFragment(outState, "subFragment", writingFragment);
+        else if (app.exerciseType == ExerciseType.Listening)
+            getChildFragmentManager().putFragment(outState, "subFragment", listeningFragment);
     }
 }

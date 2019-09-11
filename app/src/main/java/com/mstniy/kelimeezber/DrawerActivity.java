@@ -23,8 +23,9 @@ public class DrawerActivity extends AppCompatActivity {
     MyApplication app;
     ExerciseFragment exerciseFragment;
     WordListFragment listFragment;
-    NavigationView navView;
     StatsFragment statsFragment;
+    NavigationView navView;
+    Fragment.SavedState exerciseFragmentSavedState;
 
     public void onAttachFragment(Fragment fragment) {
         super.onAttachFragment(fragment);
@@ -32,6 +33,8 @@ public class DrawerActivity extends AppCompatActivity {
             exerciseFragment = (ExerciseFragment) fragment;
         } else if (fragment instanceof WordListFragment) {
             listFragment = (WordListFragment) fragment;
+        } else if (fragment instanceof StatsFragment) {
+            statsFragment = (StatsFragment) fragment;
         }
     }
 
@@ -51,7 +54,7 @@ public class DrawerActivity extends AppCompatActivity {
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_tabbed);
+        setContentView(R.layout.activity_drawer);
         app = (MyApplication) getApplicationContext();
         exerciseFragment = new ExerciseFragment();
         listFragment = new WordListFragment();
@@ -67,7 +70,7 @@ public class DrawerActivity extends AppCompatActivity {
         navView = findViewById(R.id.nav_view);
         navView.setNavigationItemSelectedListener(new OnNavigationItemSelectedListener() {
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                Fragment fragment;
+                Fragment fragment = null;
                 FragmentManager fragmentManager = getSupportFragmentManager();
                 switch (menuItem.getItemId()) {
                     case R.id.drawer_list:
@@ -76,11 +79,17 @@ public class DrawerActivity extends AppCompatActivity {
                     case R.id.drawer_stats:
                         fragment = statsFragment;
                         break;
-                    default:
+                    case R.id.drawer_exercise:
                         fragment = exerciseFragment;
                         break;
                 }
-                fragmentManager.beginTransaction().replace(R.id.main_fragment_frame, fragment).commit();
+                if (fragment.isAdded() == false) { // User chose a fragment which is not the one that is already on the screen
+                    if (exerciseFragment.isAdded()) // Save the state of the exercise fragment, if it was the active one.
+                        exerciseFragmentSavedState = fragmentManager.saveFragmentInstanceState(exerciseFragment); // TODO: Why not use put/setFragment here, like we do in ExerciseFragment?
+                    if (menuItem.getItemId() == R.id.drawer_exercise) // If the user chose the exercise drawer, restore its state.
+                        exerciseFragment.setInitialSavedState(exerciseFragmentSavedState); // TODO: DrawerActivity doesn't override onSaveInstanceState, but somehow still does restore the state of the subfragments after rotations. How does that work?  Does onNagivationItemSelected get called somehow cna restore the fragment state using the exerciseFragmentSavedState member field?
+                    fragmentManager.beginTransaction().replace(R.id.main_fragment_frame, fragment).commit();
+                }
                 drawerLayout.closeDrawer(GravityCompat.START);
                 return true;
             }

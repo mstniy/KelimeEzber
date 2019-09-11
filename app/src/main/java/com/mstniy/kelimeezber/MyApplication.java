@@ -254,12 +254,12 @@ public class MyApplication extends Application implements OnInitListener {
         }
     }
 
-    void playAudio(Uri uri) {
+    void playAudio(String path) {
         if (!isMuted) {
             mediaPlayer.reset();
             mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             try {
-                mediaPlayer.setDataSource(this, uri);
+                mediaPlayer.setDataSource(this, Uri.parse(path));
                 mediaPlayer.prepare();
             }
             catch (IOException e) {
