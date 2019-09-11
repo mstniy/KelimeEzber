@@ -33,20 +33,7 @@ public class ExerciseFragment extends Fragment {
 
     MyApplication app;
     FrameLayout frame;
-    MCFragment multipleChoiceFragment;
     Button muteButton;
-    WritingFragment writingFragment;
-    ListeningFragment listeningFragment;
-
-    public void onAttachFragment(Fragment childFragment) {
-        super.onAttachFragment(childFragment);
-        if (childFragment instanceof WritingFragment)
-            writingFragment = (WritingFragment) childFragment;
-        else if (childFragment instanceof MCFragment)
-            multipleChoiceFragment = (MCFragment) childFragment;
-        else if (childFragment instanceof ListeningFragment)
-            listeningFragment = (ListeningFragment)childFragment;
-    }
 
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -69,19 +56,10 @@ public class ExerciseFragment extends Fragment {
                 ExerciseFragment.this.muteButtonPressed();
             }
         });
-        multipleChoiceFragment = new MCFragment();
-        writingFragment = new WritingFragment();
-        listeningFragment = new ListeningFragment();
-        if (savedInstanceState != null) {
-            Fragment.SavedState savedSubFragmentState = savedInstanceState.getParcelable("subFragment");
-            if (app.exerciseType == ExerciseType.MC)
-                multipleChoiceFragment.setInitialSavedState(savedSubFragmentState);
-            if (app.exerciseType == ExerciseType.Writing)
-                writingFragment.setInitialSavedState(savedSubFragmentState);
-            if (app.exerciseType == ExerciseType.Listening)
-                listeningFragment.setInitialSavedState(savedSubFragmentState);
-        }
-        ChangeExercise(app.currentPair, app.exerciseType);
+        Fragment.SavedState savedSubFragmentState = null;
+        if (savedInstanceState != null)
+            savedSubFragmentState = savedInstanceState.getParcelable("subFragment");
+        ChangeExercise(app.currentPair, app.exerciseType, savedSubFragmentState);
         return rootView;
     }
 
@@ -134,25 +112,35 @@ public class ExerciseFragment extends Fragment {
     }
 
     void ChangeExercise(Pair p, ExerciseType et) {
-        Fragment fragment = null;
-        if (et == ExerciseType.Writing)
-            fragment = writingFragment;
-        else if (et == ExerciseType.MC)
-            fragment = multipleChoiceFragment;
-        else if (et == ExerciseType.Listening)
-            fragment = listeningFragment;
-        if (!fragment.isAdded()) {
-            getChildFragmentManager().beginTransaction().replace(R.id.exercise_fragment_frame, fragment).commit();
+        ChangeExercise(p, et, null);
+    }
+
+    void ChangeExercise(Pair p, ExerciseType et, SavedState savedSubFragmentState) {
+        Fragment currentFragment = getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame);
+        if (currentFragment == null // If the new exercise is of a different type to the one currently shown on the screen, or there is no exercise currently shown on the screen
+                || currentFragment.isAdded() == false // findFragmentById doesn't return null after rotations, even though the old fragment has already detached.
+                || (et == ExerciseType.Listening && ! (currentFragment instanceof  ListeningFragment))
+                || (et == ExerciseType.MC && ! (currentFragment instanceof  MCFragment))
+                || (et == ExerciseType.Writing && ! (currentFragment instanceof  WritingFragment))) {
+            Fragment newFragment = null;
+            if (et == ExerciseType.Writing)
+                newFragment = Fragment.instantiate(getContext(), WritingFragment.class.getName());
+            else if (et == ExerciseType.MC)
+                newFragment = Fragment.instantiate(getContext(), MCFragment.class.getName());
+            else if (et == ExerciseType.Listening)
+                newFragment = Fragment.instantiate(getContext(), ListeningFragment.class.getName());
+            newFragment.setInitialSavedState(savedSubFragmentState);
+            getChildFragmentManager().beginTransaction().replace(R.id.exercise_fragment_frame, newFragment).commit();
             getChildFragmentManager().executePendingTransactions();
             return;
         }
 
         if (et == ExerciseType.MC)
-            multipleChoiceFragment.newRound(p);
+            ((MCFragment)currentFragment).newRound(p);
         else if (et == ExerciseType.Writing)
-            writingFragment.newRound(p);
+            ((WritingFragment)currentFragment).newRound(p);
         else if (et == ExerciseType.Listening)
-            listeningFragment.newRound(); // TODO: We persist the states of the other exercise types by keeping the state in MyApplication. But we aren't doing the same thing for the random audio sample chosen by ListeningFragment. We should refrain from polluting MyApplication with all the state we wish to persist and instead use Android's Bundle's.
+            ((ListeningFragment)currentFragment).newRound(); // TODO: We persist the states of the other exercise types by keeping the state in MyApplication. But we aren't doing the same thing for the random audio sample chosen by ListeningFragment. We should refrain from polluting MyApplication with all the state we wish to persist and instead use Android's Bundle's.
     }
 
     private void muteButtonPressed() {
@@ -162,7 +150,7 @@ public class ExerciseFragment extends Fragment {
             if ((app.exerciseType == ExerciseType.MC && app.currentFwd) || app.exerciseType == ExerciseType.Writing)
                 app.speak(app.currentPair.first);
             else if (app.exerciseType == ExerciseType.Listening)
-                listeningFragment.speak();
+                ((ListeningFragment)getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame)).speak();
         }
         else
             muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode_off, 0, 0, 0);
@@ -171,13 +159,8 @@ public class ExerciseFragment extends Fragment {
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        SavedState subFragmentState = null;
-        if (app.exerciseType == ExerciseType.MC)
-            subFragmentState = getChildFragmentManager().saveFragmentInstanceState(multipleChoiceFragment);
-        else if (app.exerciseType == ExerciseType.Writing)
-            subFragmentState = getChildFragmentManager().saveFragmentInstanceState(writingFragment);
-        else if (app.exerciseType == ExerciseType.Listening)
-            subFragmentState = getChildFragmentManager().saveFragmentInstanceState(listeningFragment);
+        Fragment currentSubFragment = getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame);
+        SavedState subFragmentState = getChildFragmentManager().saveFragmentInstanceState(currentSubFragment);
         outState.putParcelable("subFragment", subFragmentState);
     }
 }
