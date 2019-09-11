@@ -73,12 +73,13 @@ public class ExerciseFragment extends Fragment {
         writingFragment = new WritingFragment();
         listeningFragment = new ListeningFragment();
         if (savedInstanceState != null) {
+            Fragment.SavedState savedSubFragmentState = savedInstanceState.getParcelable("subFragment");
             if (app.exerciseType == ExerciseType.MC)
-                multipleChoiceFragment = (MCFragment) getChildFragmentManager().getFragment(savedInstanceState, "subFragment");
+                multipleChoiceFragment.setInitialSavedState(savedSubFragmentState);
             if (app.exerciseType == ExerciseType.Writing)
-                writingFragment = (WritingFragment) getChildFragmentManager().getFragment(savedInstanceState, "subFragment");
+                writingFragment.setInitialSavedState(savedSubFragmentState);
             if (app.exerciseType == ExerciseType.Listening)
-                listeningFragment = (ListeningFragment) getChildFragmentManager().getFragment(savedInstanceState, "subFragment");
+                listeningFragment.setInitialSavedState(savedSubFragmentState);
         }
         ChangeExercise(app.currentPair, app.exerciseType);
         return rootView;
@@ -170,11 +171,13 @@ public class ExerciseFragment extends Fragment {
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
+        SavedState subFragmentState = null;
         if (app.exerciseType == ExerciseType.MC)
-            getChildFragmentManager().putFragment(outState, "subFragment", multipleChoiceFragment);
+            subFragmentState = getChildFragmentManager().saveFragmentInstanceState(multipleChoiceFragment);
         else if (app.exerciseType == ExerciseType.Writing)
-            getChildFragmentManager().putFragment(outState, "subFragment", writingFragment);
+            subFragmentState = getChildFragmentManager().saveFragmentInstanceState(writingFragment);
         else if (app.exerciseType == ExerciseType.Listening)
-            getChildFragmentManager().putFragment(outState, "subFragment", listeningFragment);
+            subFragmentState = getChildFragmentManager().saveFragmentInstanceState(listeningFragment);
+        outState.putParcelable("subFragment", subFragmentState);
     }
 }
