@@ -270,4 +270,8 @@ public class MyApplication extends Application implements OnInitListener {
             mediaPlayer.start();
         }
     }
+
+    void stopPlayingAudio() {
+        mediaPlayer.stop();
+    }
 }

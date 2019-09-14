@@ -217,4 +217,11 @@ public class ListeningFragment extends Fragment {
             wordTableOptions.addView(button);
         }
     }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        app.stopPlayingAudio();
+    }
 }
