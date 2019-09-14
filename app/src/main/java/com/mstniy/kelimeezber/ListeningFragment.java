@@ -75,6 +75,7 @@ public class ListeningFragment extends Fragment implements ExerciseFragmentInter
             throw new RuntimeException("validated.tsv not found in the audio dataset path.");
         }
         created = true;
+        SoftKeyboardHelper.hideSoftKeyboard(getContext());
         return rootView;
     }
 

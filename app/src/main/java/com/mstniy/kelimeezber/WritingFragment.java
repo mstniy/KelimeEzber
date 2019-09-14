@@ -1,5 +1,6 @@
 package com.mstniy.kelimeezber;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -11,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout.LayoutParams;
@@ -20,9 +22,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Random;
 
 public class WritingFragment extends Fragment implements ExerciseFragmentInterface {
     final String TAG = getClass().getName();
+
+    final private double LETTER_TABLE_AVAILABLE_PROB = 0.75;
+    final private double FROM_FOREIGN_SPEECH_PROB = 0.5; // Valid only if the app is not muted.
+
     MyApplication app;
     Button backspace;
     boolean created = false;
@@ -31,6 +38,8 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     TextView label;
     FlexboxLayout letterTable;
     EditText userInput;
+    boolean letterTableAvailable; // If false, no letter table is given to the user. This is more challenging.
+    boolean fromForeignSpeech; // If false, *label* will be set to the translation in the native language.If true, the translation in the second language is played as audio.
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         app = (MyApplication) getContext().getApplicationContext();
@@ -84,27 +93,37 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
 
     void newRound(Pair p) {
         if (created) {
-            String str = "";
-            label.setText(str);
-            hintView.setText(str);
-            userInput.setText(str);
+            label.setText("");
+            hintView.setText("");
+            userInput.setText("");
             letterTable.removeAllViews();
-            if (p != null) {
-                label.setText(p.second);
+            if (p == null)
+                return ;
+
+            letterTableAvailable = new Random().nextDouble() <= LETTER_TABLE_AVAILABLE_PROB;
+            if (app.isMuted == false)
+                fromForeignSpeech = new Random().nextDouble() <= FROM_FOREIGN_SPEECH_PROB;
+            else
+                fromForeignSpeech = false;
+
+            if (letterTableAvailable) {
                 HashSet<Character> choices = new HashSet<>();
                 String word = p.first;
-                for (int i = 0; i < word.length(); i++) {
+                for (int i = 0; i < word.length(); i++)
                     choices.add(Character.valueOf(word.charAt(i)));
-                }
                 ArrayList<Character> choicesArray = new ArrayList<>(choices);
                 Collections.shuffle(choicesArray);
                 for (Character ch : choicesArray) {
                     TextView b = CreateButton(String.valueOf(ch));
                     letterTable.addView(b);
                 }
-                MyApplication myApplication = app;
-                myApplication.speak(myApplication.currentPair.first);
             }
+            else
+                SoftKeyboardHelper.showSoftKeyboard(getContext());
+            if (fromForeignSpeech)
+                app.speak(app.currentPair.first);
+            else
+                label.setText(app.currentPair.second);
         }
     }
 
@@ -171,6 +190,13 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
 
         outState.putCharSequence("userInput", userInput.getText());
 
+        outState.putBoolean("letterTableAvailable", letterTableAvailable);
+
+        if (letterTableAvailable == false)
+            SoftKeyboardHelper.showSoftKeyboard(getContext());
+
+        outState.putBoolean("fromForeignSpeech", fromForeignSpeech);
+
         CharSequence[] letters = new CharSequence[letterTable.getChildCount()];
         for (int i=0; i<letterTable.getChildCount(); i++)
             letters[i] = ((TextView)letterTable.getChildAt(i)).getText();
@@ -186,7 +212,13 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
             return ;
         }
 
-        label.setText(app.currentPair.second);
+        letterTableAvailable = savedInstanceState.getBoolean("letterTableAvailable");
+        fromForeignSpeech = savedInstanceState.getBoolean("fromForeignSpeech");
+
+        if (fromForeignSpeech == false)
+            label.setText(app.currentPair.second);
+        else
+            label.setText("");
 
         if (app.isPass == false)
             hintView.setText(app.currentPair.first);
@@ -200,6 +232,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
 
     @Override
     public void unmuted() {
-        app.speak(app.currentPair.first);
+        if (fromForeignSpeech)
+            app.speak(app.currentPair.first);
     }
 }
