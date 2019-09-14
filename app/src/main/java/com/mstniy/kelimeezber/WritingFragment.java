@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 
-public class WritingFragment extends Fragment {
+public class WritingFragment extends Fragment implements ExerciseFragmentInterface {
     final String TAG = getClass().getName();
     MyApplication app;
     Button backspace;
@@ -196,5 +196,10 @@ public class WritingFragment extends Fragment {
         CharSequence[] letters = savedInstanceState.getCharSequenceArray("letters");
         for (int i=0; i<letters.length; i++)
             letterTable.addView(CreateButton(letters[i].toString()));
+    }
+
+    @Override
+    public void unmuted() {
+        app.speak(app.currentPair.first);
     }
 }

@@ -17,12 +17,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
-public class MCFragment extends Fragment {
+public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     final String TAG = getClass().getName();
+    final double FWD_PROBABILITY = 0.5;
+
     MyApplication app;
     Button[] buttons = new Button[4];
     boolean[] buttonsHighlighted = new boolean[4];
     boolean created = false;
+    boolean currentFwd;
     TextView label;
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -54,17 +57,18 @@ public class MCFragment extends Fragment {
                 buttons[i2].setText("");
             if (p == null)
                 return ;
+            currentFwd = new Random().nextDouble() <= FWD_PROBABILITY;
             int answer = new Random().nextInt(4);
-            label.setText(app.currentFwd ? p.first : p.second);
+            label.setText(currentFwd ? p.first : p.second);
             for (int i3 = 0; i3 < 4; i3++) {
                 if (i3 == answer)
-                    buttons[i3].setText(app.currentFwd ? p.second : p.first);
+                    buttons[i3].setText(currentFwd ? p.second : p.first);
                 else {
                     Pair p2 = PairChooser.ChoosePairRandom(app);
-                    buttons[i3].setText(app.currentFwd ? p2.second : p2.first);
+                    buttons[i3].setText(currentFwd ? p2.second : p2.first);
                 }
             }
-            if (app.currentFwd)
+            if (currentFwd)
                 app.speak(p.first);
         }
     }
@@ -79,7 +83,7 @@ public class MCFragment extends Fragment {
     }
 
     private boolean isACorrectAnswer(String s) {
-        if (app.currentFwd) {
+        if (currentFwd) {
             return (app.wordTranslationsFwd.get(app.currentPair.first)).contains(s);
         }
         return (app.wordTranslationsBwd.get(app.currentPair.second)).contains(s);
@@ -104,6 +108,8 @@ public class MCFragment extends Fragment {
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
 
+        outState.putBoolean("currentFwd", currentFwd);
+
         CharSequence[] buttonTexts = new CharSequence[4];
         for (int i=0;i<4;i++)
             buttonTexts[i] = buttons[i].getText();
@@ -121,7 +127,9 @@ public class MCFragment extends Fragment {
             return ;
         }
 
-        label.setText(app.currentFwd ? app.currentPair.first : app.currentPair.second);
+        currentFwd = savedInstanceState.getBoolean("currentFwd");
+
+        label.setText(currentFwd ? app.currentPair.first : app.currentPair.second);
 
         CharSequence[] buttonTexts = savedInstanceState.getCharSequenceArray("buttonTexts");
         for (int i=0; i<4; i++)
@@ -130,5 +138,11 @@ public class MCFragment extends Fragment {
         boolean[] buttonsHighlighted = savedInstanceState.getBooleanArray("buttonsHighlighted");
         for (int i=0; i<4; i++)
             ChangeColorOfButton(i, buttonsHighlighted[i]);
+    }
+
+    @Override
+    public void unmuted() {
+        if (currentFwd)
+            app.speak(app.currentPair.first);
     }
 }

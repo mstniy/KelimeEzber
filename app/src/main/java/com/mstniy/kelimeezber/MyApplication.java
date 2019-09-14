@@ -22,9 +22,7 @@ enum SelectionMethod {
 public class MyApplication extends Application implements OnInitListener {
     static final int MaxWordPeriod = 256;
     private static final String TAG = MyApplication.class.getName();
-    final double FWD_PROBABILITY = 0.5;
     final double MC_PROBABILITY = 0.5;
-    boolean currentFwd;
     Pair currentPair = null;
     int currentQueueIndex;
     ExerciseFragment exerciseFragment;
@@ -185,7 +183,7 @@ public class MyApplication extends Application implements OnInitListener {
                 currentPair = PairChooser.ChoosePairNew(this);
             else if (selectionMethod == SelectionMethod.RANDOM)
                 currentPair = PairChooser.ChoosePairRandom(this);
-            currentFwd = new Random().nextDouble() <= FWD_PROBABILITY;
+
             isPass = true;
         }
         if (exerciseFragment != null && exerciseFragment.isAdded()) {

@@ -26,6 +26,10 @@ enum ExerciseType {
     Listening
 }
 
+interface ExerciseFragmentInterface {
+    void unmuted();
+}
+
 public class ExerciseFragment extends Fragment {
     static final String TAG = ExerciseFragment.class.getName();
 
@@ -147,10 +151,7 @@ public class ExerciseFragment extends Fragment {
         app.isMuted = !app.isMuted;
         if (!app.isMuted) {
             muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode, 0, 0, 0);
-            if ((app.exerciseType == ExerciseType.MC && app.currentFwd) || app.exerciseType == ExerciseType.Writing)
-                app.speak(app.currentPair.first);
-            else if (app.exerciseType == ExerciseType.Listening)
-                ((ListeningFragment)getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame)).speak();
+            ((ExerciseFragmentInterface)getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame)).unmuted();
         }
         else
             muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode_off, 0, 0, 0);

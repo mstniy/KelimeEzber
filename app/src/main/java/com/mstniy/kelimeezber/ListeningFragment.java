@@ -36,7 +36,7 @@ class AudioAndWords implements Serializable {
     }
 }
 
-public class ListeningFragment extends Fragment {
+public class ListeningFragment extends Fragment implements ExerciseFragmentInterface {
     final String TAG = getClass().getName();
     final int MINIMUM_SENTENCE_LENGTH_IN_WORDS = 4;
 
@@ -76,10 +76,6 @@ public class ListeningFragment extends Fragment {
         }
         created = true;
         return rootView;
-    }
-
-    void speak() {
-        app.playAudio(p.audioPath);
     }
 
     ArrayList<String> tokenizeWords(String sentence) {
@@ -223,5 +219,10 @@ public class ListeningFragment extends Fragment {
         super.onPause();
 
         app.stopPlayingAudio();
+    }
+
+    @Override
+    public void unmuted() {
+        app.playAudio(p.audioPath);
     }
 }
