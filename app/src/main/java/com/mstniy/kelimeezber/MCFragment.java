@@ -58,6 +58,10 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
             label.setText(app.currentPair.second);
     }
 
+    void setLabel() {
+        label.setText(currentFwd ? app.currentPair.first : app.currentPair.second);
+    }
+
     void newRound(Pair p) {
         if (created) {
             for (int i = 0; i < 4; i++)
@@ -109,11 +113,10 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
                 app.FinishRound();
             } else {
                 app.isPass = false;
-                for (int i = 0; i < 4; i++) {
-                    if (isACorrectAnswer(buttons[i].getText().toString())) {
+                setLabel();
+                for (int i = 0; i < 4; i++)
+                    if (isACorrectAnswer(buttons[i].getText().toString()))
                         ChangeColorOfButton(i, true);
-                    }
-                }
             }
         }
     }
@@ -132,6 +135,8 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         outState.putCharSequenceArray("buttonTexts", buttonTexts);
 
         outState.putBooleanArray("buttonsHighlighted", buttonsHighlighted);
+
+        outState.putCharSequence("label", label.getText());
     }
 
     @Override
@@ -156,6 +161,8 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         boolean[] buttonsHighlighted = savedInstanceState.getBooleanArray("buttonsHighlighted");
         for (int i=0; i<4; i++)
             ChangeColorOfButton(i, buttonsHighlighted[i]);
+
+        label.setText(savedInstanceState.getCharSequence("label"));
     }
 
     @Override

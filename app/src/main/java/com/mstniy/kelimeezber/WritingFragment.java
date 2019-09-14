@@ -164,6 +164,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         Pair currentPair = app.currentPair;
         app.isPass = false;
         hintView.setText(currentPair.first);
+        label.setText(currentPair.second);
         app.speak(currentPair.first);
     }
 
@@ -222,8 +223,10 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         else
             label.setText("");
 
-        if (app.isPass == false)
+        if (app.isPass == false) {
             hintView.setText(app.currentPair.first);
+            label.setText(app.currentPair.second);
+        }
         else
             hintView.setText("");
 
