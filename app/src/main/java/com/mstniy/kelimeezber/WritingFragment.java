@@ -1,6 +1,8 @@
 package com.mstniy.kelimeezber;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -61,8 +63,23 @@ public class WritingFragment extends Fragment {
         });
         letterTable = rootView.findViewById(R.id.letter_table);
         created = true;
-        newRound(app.currentPair);
         return rootView;
+    }
+
+    TextView CreateButton(String s) {
+        TextView b = new TextView(getContext());
+        b.setText(s);
+        b.setBackgroundResource(android.R.drawable.btn_default);
+        b.setTextSize(20.0f);
+        b.setGravity(Gravity.CENTER);
+        b.setOnClickListener(new OnClickListener() {
+            public void onClick(View v) {
+                ButtonClicked((TextView) v);
+            }
+        });
+        float factor = getContext().getResources().getDisplayMetrics().density;
+        b.setLayoutParams(new LayoutParams((int) (factor * 59.0f), (int) (59.0f * factor)));
+        return b;
     }
 
     void newRound(Pair p) {
@@ -81,21 +98,9 @@ public class WritingFragment extends Fragment {
                 }
                 ArrayList<Character> choicesArray = new ArrayList<>(choices);
                 Collections.shuffle(choicesArray);
-                Iterator it = choicesArray.iterator();
-                while (it.hasNext()) {
-                    Character ch = (Character) it.next();
-                    TextView b = new TextView(getContext());
-                    b.setText(String.valueOf(ch));
-                    b.setBackgroundResource(android.R.drawable.btn_default);
-                    b.setTextSize(20.0f);
-                    b.setGravity(Gravity.CENTER);
-                    b.setOnClickListener(new OnClickListener() {
-                        public void onClick(View v) {
-                            ButtonClicked((TextView) v);
-                        }
-                    });
-                    float factor = getContext().getResources().getDisplayMetrics().density;
-                    letterTable.addView(b, new LayoutParams((int) (factor * 59.0f), (int) (59.0f * factor)));
+                for (Character ch : choicesArray) {
+                    TextView b = CreateButton(String.valueOf(ch));
+                    letterTable.addView(b);
                 }
                 MyApplication myApplication = app;
                 myApplication.speak(myApplication.currentPair.first);
@@ -158,5 +163,38 @@ public class WritingFragment extends Fragment {
                 SetInputTextAndSelection(sb2.toString(), selStart, selStart);
             }
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putCharSequence("userInput", userInput.getText());
+
+        CharSequence[] letters = new CharSequence[letterTable.getChildCount()];
+        for (int i=0; i<letterTable.getChildCount(); i++)
+            letters[i] = ((TextView)letterTable.getChildAt(i)).getText();
+        outState.putCharSequenceArray("letters", letters);
+    }
+
+    @Override
+    public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
+        super.onViewStateRestored(savedInstanceState);
+
+        if (savedInstanceState == null) {
+            newRound(app.currentPair);
+            return ;
+        }
+
+        label.setText(app.currentPair.second);
+
+        if (app.isPass == false)
+            hintView.setText(app.currentPair.first);
+        else
+            hintView.setText("");
+
+        CharSequence[] letters = savedInstanceState.getCharSequenceArray("letters");
+        for (int i=0; i<letters.length; i++)
+            letterTable.addView(CreateButton(letters[i].toString()));
     }
 }
