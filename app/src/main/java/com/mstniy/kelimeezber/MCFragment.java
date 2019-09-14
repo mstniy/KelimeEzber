@@ -1,6 +1,5 @@
 package com.mstniy.kelimeezber;
 
-import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -11,17 +10,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Random;
 
 public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     final String TAG = getClass().getName();
     final double FWD_PROBABILITY = 0.5;
+    final double FOREIGN_TEXT_SHOWN_PROB = 0.5;
 
     MyApplication app;
     Button[] buttons = new Button[4];
@@ -29,6 +26,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     boolean created = false;
     boolean currentFwd;
     TextView label;
+    boolean foreignTextShown; // Valid only if currentFwd == true and the app is not muted
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         app = (MyApplication) getContext().getApplicationContext();
@@ -47,8 +45,17 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
             });
         }
         created = true;
-        SoftKeyboardHelper.hideSoftKeyboard(getContext());
+        SoftKeyboardHelper.hideSoftKeyboard(getActivity());
         return rootView;
+    }
+
+    void maybeSetLabel() {
+        if (currentFwd) {
+            if (foreignTextShown)
+                label.setText(app.currentPair.first);
+        }
+        else
+            label.setText(app.currentPair.second);
     }
 
     void newRound(Pair p) {
@@ -61,8 +68,12 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
             if (p == null)
                 return ;
             currentFwd = new Random().nextDouble() <= FWD_PROBABILITY;
+            if (app.isMuted == false)
+                foreignTextShown = new Random().nextDouble() <= FOREIGN_TEXT_SHOWN_PROB;
+            else
+                foreignTextShown = true;
             int answer = new Random().nextInt(4);
-            label.setText(currentFwd ? p.first : p.second);
+            maybeSetLabel();
             for (int i3 = 0; i3 < 4; i3++) {
                 if (i3 == answer)
                     buttons[i3].setText(currentFwd ? p.second : p.first);
@@ -113,6 +124,8 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
 
         outState.putBoolean("currentFwd", currentFwd);
 
+        outState.putBoolean("foreignTextShown", foreignTextShown);
+
         CharSequence[] buttonTexts = new CharSequence[4];
         for (int i=0;i<4;i++)
             buttonTexts[i] = buttons[i].getText();
@@ -132,7 +145,9 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
 
         currentFwd = savedInstanceState.getBoolean("currentFwd");
 
-        label.setText(currentFwd ? app.currentPair.first : app.currentPair.second);
+        foreignTextShown = savedInstanceState.getBoolean("foreignTextShown");
+
+        maybeSetLabel();
 
         CharSequence[] buttonTexts = savedInstanceState.getCharSequenceArray("buttonTexts");
         for (int i=0; i<4; i++)

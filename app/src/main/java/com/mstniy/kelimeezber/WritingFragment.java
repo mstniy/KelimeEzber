@@ -118,8 +118,10 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
                     letterTable.addView(b);
                 }
             }
-            else
-                SoftKeyboardHelper.showSoftKeyboard(getContext());
+            else {
+                userInput.requestFocus();
+                SoftKeyboardHelper.showSoftKeyboard(getActivity());
+            }
             if (fromForeignSpeech)
                 app.speak(app.currentPair.first);
             else
@@ -193,7 +195,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         outState.putBoolean("letterTableAvailable", letterTableAvailable);
 
         if (letterTableAvailable == false)
-            SoftKeyboardHelper.showSoftKeyboard(getContext());
+            SoftKeyboardHelper.showSoftKeyboard(getActivity());
 
         outState.putBoolean("fromForeignSpeech", fromForeignSpeech);
 
