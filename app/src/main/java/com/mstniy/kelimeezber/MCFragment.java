@@ -69,21 +69,12 @@ public class MCFragment extends Fragment {
         }
     }
 
-    private int px2dp(int dp) {
-        final float scale = getResources().getDisplayMetrics().density;
-        return (int)(dp * scale + 0.5);
-    }
-
     private void ChangeColorOfButton(int buttonIndex, boolean highlight) {
         Button button = buttons[buttonIndex];
         if (highlight)
             button.setBackgroundColor(Color.rgb(100, 255, 100));
         else
             button.setBackgroundResource(android.R.drawable.btn_default);
-        if (getResources().getDisplayMetrics().heightPixels < 1000)
-            button.setPadding(0,0,0,0); // Remove the padding for split screen mode.
-        else
-            button.setPadding(0, px2dp(45), 0, px2dp(45));
         buttonsHighlighted[buttonIndex] = highlight;
     }
 
