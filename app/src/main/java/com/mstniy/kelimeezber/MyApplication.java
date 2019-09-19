@@ -161,6 +161,7 @@ public class MyApplication extends Application implements OnInitListener {
     }
 
     void StartRound() {
+        roundId++;
         if (selectionMethod == SelectionMethod.LISTENING) {
             exerciseType = ExerciseType.Listening;
             currentPair = null;
@@ -242,7 +243,6 @@ public class MyApplication extends Application implements OnInitListener {
                 helper.setCurrentQueueIndex(currentQueueIndex);
             }
         }
-        roundId++;
         StartRound();
     }
 

@@ -61,8 +61,11 @@ public class ExerciseFragment extends Fragment {
             }
         });
         Fragment.SavedState savedSubFragmentState = null;
-        if (savedInstanceState != null)
-            savedSubFragmentState = savedInstanceState.getParcelable("subFragment");
+        if (savedInstanceState != null) {
+            int savedRoundId = savedInstanceState.getInt("roundId");
+             if (app.roundId == savedRoundId) // If we are not in the same round as the one in which this fragment state was saved. This condition may not hold if, while the ExerciseFragment is not visible, the user deletes the current pair and MyApplication decides to choose a new current pair, and then the user switches back to ExerciseFragment.
+                savedSubFragmentState = savedInstanceState.getParcelable("subFragment");
+        }
         ChangeExercise(app.currentPair, app.exerciseType, savedSubFragmentState);
         return rootView;
     }
@@ -163,5 +166,7 @@ public class ExerciseFragment extends Fragment {
         Fragment currentSubFragment = getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame);
         SavedState subFragmentState = getChildFragmentManager().saveFragmentInstanceState(currentSubFragment);
         outState.putParcelable("subFragment", subFragmentState);
+
+        outState.putInt("roundId", app.roundId);
     }
 }
