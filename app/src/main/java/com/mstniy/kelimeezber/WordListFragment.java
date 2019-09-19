@@ -57,7 +57,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
         filterPattern = Pattern.compile("");
         setDataset(myDataset);
         app.sortByPeriod.observe(lifecycleOwner, new Observer<Boolean>() {
-            public void onChanged(@Nullable Boolean sortByHardness) {
+            public void onChanged(@Nullable Boolean sortByPeriod) {
                 sortMDataset();
                 notifyDataSetChanged();
             }

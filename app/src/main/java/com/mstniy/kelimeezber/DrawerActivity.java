@@ -43,6 +43,7 @@ public class DrawerActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_drawer);
         app = (MyApplication) getApplicationContext();
+        app.drawerActivity = this;
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         final DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
@@ -91,5 +92,9 @@ public class DrawerActivity extends AppCompatActivity {
             navView.setCheckedItem(R.id.drawer_exercise);
         }
         getExternalStoragePermission(this);
+    }
+
+    void discardSavedExerciseState() {
+        exerciseFragmentSavedState = null;
     }
 }

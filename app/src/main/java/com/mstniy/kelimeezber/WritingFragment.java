@@ -40,6 +40,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     EditText userInput;
     boolean letterTableAvailable; // If false, no letter table is given to the user. This is more challenging.
     boolean fromForeignSpeech; // If false, *label* will be set to the translation in the native language.If true, the translation in the second language is played as audio.
+    boolean suppressEditTextChangedCallback = false;
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         app = (MyApplication) getContext().getApplicationContext();
@@ -130,11 +131,11 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     }
 
     void SetInputTextAndSelection(String text, int selStart, int selEnd) {
-        int roundIdBefore = app.roundId;
+        suppressEditTextChangedCallback = true;
         userInput.setText(text);
-        if (app.roundId == roundIdBefore) {
-            userInput.setSelection(selStart, selEnd);
-        }
+        userInput.setSelection(selStart, selEnd);
+        suppressEditTextChangedCallback = false;
+        EditTextChanged();
     }
 
     void ButtonClicked(TextView button) {
@@ -154,6 +155,8 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     }
 
     void EditTextChanged() {
+        if (suppressEditTextChangedCallback)
+            return ;
         if ((letterTableAvailable && userInput.getText().toString().compareTo(app.currentPair.first) == 0) ||
                 (letterTableAvailable == false && app.isACorrectAnswer(userInput.getText().toString(), false))) {
             userInput.setText("");

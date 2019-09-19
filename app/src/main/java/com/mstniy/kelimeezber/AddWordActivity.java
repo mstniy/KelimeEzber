@@ -39,7 +39,7 @@ public class AddWordActivity extends AppCompatActivity {
                         Toast.LENGTH_SHORT).show();
                 return ;
             }
-        app.AddPair(new Pair(0, first, second, 0, 1)); // AddPair will set proper id
+        app.AddPair(new Pair(0, first, second, 1, -1)); // AddPair will set proper id
         if (app.currentPair == null)
             app.StartRound();
         finish();

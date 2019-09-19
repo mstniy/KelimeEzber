@@ -1,18 +1,17 @@
 package com.mstniy.kelimeezber;
 
 class Pair {
-    public String first;
-    public double hardness;
-
     public long id;
-    public int period;
+    public String first;
     public String second;
+    public int period;
+    public int next;
 
-    public Pair(long _id, String _first, String _second, double _hardness, int _period) {
+    public Pair(long _id, String _first, String _second, int _period, int _next) {
         id = _id;
         first = _first;
         second = _second;
-        hardness = _hardness;
         period = _period;
+        next = _next;
     }
 }
