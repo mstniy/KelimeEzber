@@ -272,4 +272,11 @@ public class MyApplication extends Application implements OnInitListener {
     void stopPlayingAudio() {
         mediaPlayer.stop();
     }
+
+    boolean isACorrectAnswer(String s, boolean currentFwd) {
+        if (currentFwd)
+            return (wordTranslationsFwd.get(currentPair.first)).contains(s);
+        else
+            return (wordTranslationsBwd.get(currentPair.second)).contains(s);
+    }
 }

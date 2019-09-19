@@ -154,7 +154,8 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     }
 
     void EditTextChanged() {
-        if (userInput.getText().toString().compareTo(app.currentPair.first) == 0) {
+        if ((letterTableAvailable && userInput.getText().toString().compareTo(app.currentPair.first) == 0) ||
+                (letterTableAvailable == false && app.isACorrectAnswer(userInput.getText().toString(), false))) {
             userInput.setText("");
             app.FinishRound();
         }

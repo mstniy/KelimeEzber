@@ -100,22 +100,15 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         buttonsHighlighted[buttonIndex] = highlight;
     }
 
-    private boolean isACorrectAnswer(String s) {
-        if (currentFwd) {
-            return (app.wordTranslationsFwd.get(app.currentPair.first)).contains(s);
-        }
-        return (app.wordTranslationsBwd.get(app.currentPair.second)).contains(s);
-    }
-
     private void buttonClicked(Button button) {
         if (app.currentPair != null) {
-            if (isACorrectAnswer(button.getText().toString())) {
+            if (app.isACorrectAnswer(button.getText().toString(), currentFwd)) {
                 app.FinishRound();
             } else {
                 app.isPass = false;
                 setLabel();
                 for (int i = 0; i < 4; i++)
-                    if (isACorrectAnswer(buttons[i].getText().toString()))
+                    if (app.isACorrectAnswer(buttons[i].getText().toString(), currentFwd))
                         ChangeColorOfButton(i, true);
             }
         }
