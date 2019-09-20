@@ -6,8 +6,7 @@
     <string name="app_name">KelimeEzber</string>
     <string name="drawer_exercise">Exercise</string>
     <string name="drawer_list">Word List</string>
-    <string name="drawer_new">Learn New Words</string>
-    <string name="drawer_random">Practice Random Words</string>
+    <string name="drawer_listening">Listening</string>
     <string name="drawer_stats">Statistics</string>
     <string name="navigation_drawer_close">Close Navigation Drawer</string>
     <string name="navigation_drawer_open">Open Navigation Drawer</string>

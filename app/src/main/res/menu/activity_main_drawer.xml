@@ -9,6 +9,9 @@
         android:id="@+id/drawer_list"
         android:title="@string/drawer_list" />
     <item
+        android:id="@+id/drawer_listening"
+        android:title="@string/drawer_listening" />
+    <item
         android:id="@+id/drawer_stats"
         android:title="@string/drawer_stats" />
 </menu>

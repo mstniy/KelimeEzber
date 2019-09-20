@@ -100,7 +100,7 @@ public class MyApplication extends Application implements OnInitListener {
         }
         helper.removePair(p);
         if (currentPair == p) {
-            drawerActivity.discardSavedExerciseState();
+            drawerActivity.discardExerciseFragmentState();
             StartRound();
         }
     }

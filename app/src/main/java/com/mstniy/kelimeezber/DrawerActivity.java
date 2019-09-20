@@ -2,7 +2,6 @@ package com.mstniy.kelimeezber;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -24,6 +23,8 @@ public class DrawerActivity extends AppCompatActivity {
     MyApplication app;
     NavigationView navView;
     Fragment.SavedState exerciseFragmentSavedState;
+    Fragment.SavedState listeningFragmentSavedState;
+
 
     public static boolean getExternalStoragePermission(Activity activity) {
         if (ContextCompat.checkSelfPermission(activity,
@@ -59,6 +60,16 @@ public class DrawerActivity extends AppCompatActivity {
                 FragmentManager fragmentManager = getSupportFragmentManager();
                 Fragment currentFragment = fragmentManager.findFragmentById(R.id.main_fragment_frame);
                 switch (menuItem.getItemId()) {
+                    case R.id.drawer_exercise:
+                        if (currentFragment instanceof ExerciseFragment)
+                            break;
+                        newFragment = Fragment.instantiate(DrawerActivity.this, ExerciseFragment.class.getName());
+                        break;
+                    case R.id.drawer_listening:
+                        if (currentFragment instanceof ListeningFragment)
+                            break;
+                        newFragment = Fragment.instantiate(DrawerActivity.this, ListeningFragment.class.getName());
+                        break;
                     case R.id.drawer_list:
                         if (currentFragment instanceof WordListFragment)
                             break;
@@ -69,17 +80,16 @@ public class DrawerActivity extends AppCompatActivity {
                             break;
                         newFragment = Fragment.instantiate(DrawerActivity.this, StatsFragment.class.getName());
                         break;
-                    case R.id.drawer_exercise:
-                        if (currentFragment instanceof ExerciseFragment)
-                            break;
-                        newFragment = Fragment.instantiate(DrawerActivity.this, ExerciseFragment.class.getName());
-                        break;
                 }
                 if (newFragment != null) { // User chose a fragment which is not the one that is already on the screen
-                    if (currentFragment instanceof  ExerciseFragment) // Save the state of the exercise fragment, if it was the active one.
+                    if (currentFragment instanceof ExerciseFragment)
                         exerciseFragmentSavedState = fragmentManager.saveFragmentInstanceState(currentFragment);
-                    if (menuItem.getItemId() == R.id.drawer_exercise) // If the user chose the exercise drawer, restore its state.
+                    else if (currentFragment instanceof ListeningFragment)
+                        listeningFragmentSavedState = fragmentManager.saveFragmentInstanceState(currentFragment);
+                    if (newFragment instanceof  ExerciseFragment)
                         newFragment.setInitialSavedState(exerciseFragmentSavedState);
+                    else if (newFragment instanceof  ListeningFragment)
+                        newFragment.setInitialSavedState(listeningFragmentSavedState);
                     fragmentManager.beginTransaction().replace(R.id.main_fragment_frame, newFragment).commit();
                 }
                 drawerLayout.closeDrawer(GravityCompat.START);
@@ -94,7 +104,7 @@ public class DrawerActivity extends AppCompatActivity {
         getExternalStoragePermission(this);
     }
 
-    void discardSavedExerciseState() {
+    void discardExerciseFragmentState() {
         exerciseFragmentSavedState = null;
     }
 }
