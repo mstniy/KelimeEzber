@@ -27,6 +27,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     boolean currentFwd;
     TextView label;
     boolean foreignTextShown; // Valid only if currentFwd == true and the app is not muted
+    boolean isPass;
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         app = (MyApplication) getContext().getApplicationContext();
@@ -64,6 +65,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
 
     void newRound(Pair p) {
         if (created) {
+            isPass = true;
             for (int i = 0; i < 4; i++)
                 ChangeColorOfButton(i, false);
             label.setText("");
@@ -103,9 +105,9 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     private void buttonClicked(Button button) {
         if (app.currentPair != null) {
             if (app.isACorrectAnswer(button.getText().toString(), currentFwd)) {
-                app.FinishRound();
+                app.FinishRound(isPass);
             } else {
-                app.isPass = false;
+                isPass = false;
                 setLabel();
                 for (int i = 0; i < 4; i++)
                     if (app.isACorrectAnswer(buttons[i].getText().toString(), currentFwd))
@@ -130,6 +132,8 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         outState.putBooleanArray("buttonsHighlighted", buttonsHighlighted);
 
         outState.putCharSequence("label", label.getText());
+
+        outState.putBoolean("isPass", isPass);
     }
 
     @Override
@@ -156,6 +160,8 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
             ChangeColorOfButton(i, buttonsHighlighted[i]);
 
         label.setText(savedInstanceState.getCharSequence("label"));
+
+        isPass = savedInstanceState.getBoolean("isPass");
     }
 
     @Override

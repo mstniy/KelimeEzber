@@ -142,7 +142,7 @@ public class ListeningFragment extends Fragment implements ExerciseFragmentInter
                         break;
                     }
                 if (correctAnswer)
-                    app.FinishRound();
+                    app.FinishRound(true);
             }
 
         } else {

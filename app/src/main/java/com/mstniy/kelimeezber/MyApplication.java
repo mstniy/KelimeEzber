@@ -30,7 +30,6 @@ public class MyApplication extends Application implements OnInitListener {
     DrawerActivity drawerActivity;
     ExerciseType exerciseType;
     DatabaseHelper helper = null;
-    boolean isPass;
     boolean isCurrentPairRandom;
     Fraction randomPassFraction;
     int roundId;
@@ -179,15 +178,13 @@ public class MyApplication extends Application implements OnInitListener {
                 currentPair = PairChooser.ChoosePairRandom(this);
                 isCurrentPairRandom = true;
             }
-
-            isPass = true;
         }
         if (exerciseFragment != null && exerciseFragment.isAdded()) {
             exerciseFragment.ChangeExercise(currentPair, exerciseType);
         }
     }
 
-    void FinishRound() {
+    void FinishRound(boolean isPass) {
         if (exerciseType != ExerciseType.Listening) {
             if (isPass) {
                 currentPair.period *= 2;
@@ -195,9 +192,10 @@ public class MyApplication extends Application implements OnInitListener {
                     currentPair.period = 0;
             }
             else {
-                currentPair.period /= 2;
-                if (currentPair.period == 0 || currentPair.period > WordDropPeriod)
+                if (currentPair.period == 0  || currentPair.period > WordDropPeriod)
                     currentPair.period = WordDropPeriod;
+                else if (currentPair.period > 1)
+                    currentPair.period /= 2;
             }
             if (selectionMethod == SelectionMethod.SMART) {
                 if (currentPair.period != 0)

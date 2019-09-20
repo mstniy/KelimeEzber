@@ -41,6 +41,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     boolean letterTableAvailable; // If false, no letter table is given to the user. This is more challenging.
     boolean fromForeignSpeech; // If false, *label* will be set to the translation in the native language.If true, the translation in the second language is played as audio.
     boolean suppressEditTextChangedCallback = false;
+    boolean isPass;
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         app = (MyApplication) getContext().getApplicationContext();
@@ -94,6 +95,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
 
     void newRound(Pair p) {
         if (created) {
+            isPass = true;
             label.setText("");
             hintView.setText("");
             userInput.setText("");
@@ -160,13 +162,13 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         if ((letterTableAvailable && userInput.getText().toString().compareTo(app.currentPair.first) == 0) ||
                 (letterTableAvailable == false && app.isACorrectAnswer(userInput.getText().toString(), false))) {
             userInput.setText("");
-            app.FinishRound();
+            app.FinishRound(isPass);
         }
     }
 
     void HintButtonClicked() {
         Pair currentPair = app.currentPair;
-        app.isPass = false;
+        isPass = false;
         hintView.setText(currentPair.first);
         label.setText(currentPair.second);
         app.speak(currentPair.first);
@@ -208,6 +210,8 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         for (int i=0; i<letterTable.getChildCount(); i++)
             letters[i] = ((TextView)letterTable.getChildAt(i)).getText();
         outState.putCharSequenceArray("letters", letters);
+
+        outState.putBoolean("isPass", isPass);
     }
 
     @Override
@@ -227,7 +231,9 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         else
             label.setText("");
 
-        if (app.isPass == false) {
+        isPass = savedInstanceState.getBoolean("isPass");
+
+        if (isPass == false) {
             hintView.setText(app.currentPair.first);
             label.setText(app.currentPair.second);
         }
