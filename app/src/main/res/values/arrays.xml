@@ -4,7 +4,6 @@
         <item>Smart</item>
         <item>New</item>
         <item>Random</item>
-        <item>Listening</item>
     </array>
     <array name="sortByArray">
         <item>Lexicographical</item>

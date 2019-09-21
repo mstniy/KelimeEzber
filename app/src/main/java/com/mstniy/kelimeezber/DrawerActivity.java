@@ -68,6 +68,7 @@ public class DrawerActivity extends AppCompatActivity {
                     case R.id.drawer_listening:
                         if (currentFragment instanceof ListeningFragment)
                             break;
+                        app.isMuted = false;
                         newFragment = Fragment.instantiate(DrawerActivity.this, ListeningFragment.class.getName());
                         break;
                     case R.id.drawer_list:

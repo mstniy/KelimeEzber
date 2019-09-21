@@ -7,6 +7,8 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -50,6 +52,7 @@ public class ListeningFragment extends Fragment implements ExerciseFragmentInter
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) throws RuntimeException{
         app = (MyApplication) getContext().getApplicationContext();
+        setHasOptionsMenu(true);
         View rootView = inflater.inflate(R.layout.fragment_listening, container, false);
         hintView = rootView.findViewById(R.id.hint_view);
         hintButton = rootView.findViewById(R.id.hint_button);
@@ -77,6 +80,10 @@ public class ListeningFragment extends Fragment implements ExerciseFragmentInter
         created = true;
         SoftKeyboardHelper.hideSoftKeyboard(getActivity());
         return rootView;
+    }
+
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_listening, menu);
     }
 
     ArrayList<String> tokenizeWords(String sentence) {

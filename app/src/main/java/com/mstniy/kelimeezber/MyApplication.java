@@ -17,7 +17,7 @@ import java.util.Locale;
 import java.util.Random;
 
 enum SelectionMethod {
-    SMART, NEW, RANDOM, LISTENING
+    SMART, NEW, RANDOM
 }
 
 public class MyApplication extends Application implements OnInitListener {
@@ -134,8 +134,7 @@ public class MyApplication extends Application implements OnInitListener {
     }
 
     void StartRound() {
-        if (selectionMethod == SelectionMethod.LISTENING) {
-            exerciseType = ExerciseType.Listening;
+        if (exerciseType == ExerciseType.Listening) { // TODO: This condition can never hold, the app works though.
             currentPair = null;
         }
         else {
@@ -185,7 +184,7 @@ public class MyApplication extends Application implements OnInitListener {
     }
 
     void FinishRound(boolean isPass) {
-        if (exerciseType != ExerciseType.Listening) {
+        if (exerciseType != ExerciseType.Listening) { // TODO: This condition can never hold.
             if (isPass) {
                 currentPair.period *= 2;
                 if (currentPair.period > MaxWordPeriod)

@@ -21,14 +21,6 @@ public class SelectionMethodDialog extends DialogFragment {
                     sm = SelectionMethod.NEW;
                 else if (which == 2)
                     sm = SelectionMethod.RANDOM;
-                else if (which == 3) {
-                    if (app.audioDatasetPath==null) {
-                        Toast.makeText(getContext(), "No dataset specified", Toast.LENGTH_SHORT).show();
-                        return ;
-                    }
-                    else
-                        sm = SelectionMethod.LISTENING;
-                }
                 if (app.selectionMethod != sm) {
                     app.selectionMethod = sm;
                     app.StartRound();
