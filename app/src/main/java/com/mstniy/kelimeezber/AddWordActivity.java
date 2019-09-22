@@ -40,8 +40,6 @@ public class AddWordActivity extends AppCompatActivity {
                 return ;
             }
         app.AddPair(new Pair(0, first, second, 1, -1)); // AddPair will set proper id
-        if (app.currentPair == null)
-            app.StartRound();
         finish();
     }
 }

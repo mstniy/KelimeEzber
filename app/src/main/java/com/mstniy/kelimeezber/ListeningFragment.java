@@ -1,5 +1,6 @@
 package com.mstniy.kelimeezber;
 
+import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -48,7 +49,13 @@ public class ListeningFragment extends Fragment implements ExerciseFragmentInter
     TextView hintView;
     FlexboxLayout wordTableInput, wordTableOptions;
     ArrayList<AudioAndWords> ats = new ArrayList<>();
-    AudioAndWords p = null; // TODO: We need to persist this. Both for in-app transitions and Android app hibernations.
+    AudioAndWords p = null;
+
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        app = (MyApplication) context.getApplicationContext();
+        app.listeningFragment = this;
+    }
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) throws RuntimeException{
         app = (MyApplication) getContext().getApplicationContext();

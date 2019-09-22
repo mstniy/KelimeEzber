@@ -149,7 +149,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
 
         foreignTextShown = savedInstanceState.getBoolean("foreignTextShown");
 
-        maybeSetLabel();
+        maybeSetLabel(); //TODO: Move currentPair into exercisefragment, save it as part of its state. Selection logic shall also be moved into exerciseFragment.
 
         CharSequence[] buttonTexts = savedInstanceState.getCharSequenceArray("buttonTexts");
         for (int i=0; i<4; i++)

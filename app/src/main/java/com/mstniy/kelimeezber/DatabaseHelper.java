@@ -251,4 +251,8 @@ class DatabaseHelper {
         if (db.update(TABLE_VARIABLES, values, COLUMN_ID + "=?", new String[]{"1"}) != 1)
             throw new RuntimeException("setRoundID failed");
     }
+
+    public void close() {
+        db.close();
+    }
 }

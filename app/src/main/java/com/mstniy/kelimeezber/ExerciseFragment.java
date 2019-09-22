@@ -60,13 +60,6 @@ public class ExerciseFragment extends Fragment {
                 ExerciseFragment.this.muteButtonPressed();
             }
         });
-        Fragment.SavedState savedSubFragmentState = null;
-        if (savedInstanceState != null) {
-            int savedRoundId = savedInstanceState.getInt("roundId");
-             if (app.roundId == savedRoundId) // If we are not in the same round as the one in which this fragment state was saved. This condition may not hold if, while the ExerciseFragment is not visible, the user deletes the current pair and MyApplication decides to choose a new current pair, and then the user switches back to ExerciseFragment.
-                savedSubFragmentState = savedInstanceState.getParcelable("subFragment");
-        }
-        ChangeExercise(app.currentPair, app.exerciseType, savedSubFragmentState);
         return rootView;
     }
 
@@ -126,7 +119,6 @@ public class ExerciseFragment extends Fragment {
         Fragment currentFragment = getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame);
         if (currentFragment == null // If the new exercise is of a different type to the one currently shown on the screen, or there is no exercise currently shown on the screen
                 || currentFragment.isAdded() == false // findFragmentById doesn't return null after rotations, even though the old fragment has already detached.
-                || (et == ExerciseType.Listening && ! (currentFragment instanceof  ListeningFragment))
                 || (et == ExerciseType.MC && ! (currentFragment instanceof  MCFragment))
                 || (et == ExerciseType.Writing && ! (currentFragment instanceof  WritingFragment))) {
             Fragment newFragment = null;
@@ -134,8 +126,6 @@ public class ExerciseFragment extends Fragment {
                 newFragment = Fragment.instantiate(getContext(), WritingFragment.class.getName());
             else if (et == ExerciseType.MC)
                 newFragment = Fragment.instantiate(getContext(), MCFragment.class.getName());
-            else if (et == ExerciseType.Listening)
-                newFragment = Fragment.instantiate(getContext(), ListeningFragment.class.getName());
             newFragment.setInitialSavedState(savedSubFragmentState);
             getChildFragmentManager().beginTransaction().replace(R.id.exercise_fragment_frame, newFragment).commit();
             getChildFragmentManager().executePendingTransactions();
@@ -146,8 +136,6 @@ public class ExerciseFragment extends Fragment {
             ((MCFragment)currentFragment).newRound(p);
         else if (et == ExerciseType.Writing)
             ((WritingFragment)currentFragment).newRound(p);
-        else if (et == ExerciseType.Listening)
-            ((ListeningFragment)currentFragment).newRound(); // TODO: We persist the states of the other exercise types by keeping the state in MyApplication. But we aren't doing the same thing for the random audio sample chosen by ListeningFragment. We should refrain from polluting MyApplication with all the state we wish to persist and instead use Android's Bundle's.
     }
 
     private void muteButtonPressed() {
@@ -163,10 +151,14 @@ public class ExerciseFragment extends Fragment {
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        Fragment currentSubFragment = getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame);
-        SavedState subFragmentState = getChildFragmentManager().saveFragmentInstanceState(currentSubFragment);
-        outState.putParcelable("subFragment", subFragmentState);
+    }
 
-        outState.putInt("roundId", app.roundId);
+    @Override
+    public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
+        super.onViewStateRestored(savedInstanceState);
+        if (savedInstanceState == null) {
+            app.StartRound();
+            return ;
+        }
     }
 }

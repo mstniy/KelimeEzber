@@ -27,8 +27,8 @@ public class MyApplication extends Application implements OnInitListener {
     final double MC_PROBABILITY = 0.5;
     Pair currentPair = null;
     ExerciseFragment exerciseFragment;
+    ListeningFragment listeningFragment;
     DrawerActivity drawerActivity;
-    ExerciseType exerciseType;
     DatabaseHelper helper = null;
     boolean isCurrentPairRandom;
     Fraction randomPassFraction;
@@ -58,13 +58,18 @@ public class MyApplication extends Application implements OnInitListener {
         Log.i(str, sb.toString());
     }
 
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
+        helper.close();
+    }
+
     public void onCreate() {
         super.onCreate();
         sortByPeriod.setValue(Boolean.valueOf(true));
         helper = new DatabaseHelper(this);
         SyncStateWithDB();
         tts = new TextToSpeech(this, this);
-        StartRound();
     }
 
     void UpdatePair(Pair p) {
@@ -101,7 +106,7 @@ public class MyApplication extends Application implements OnInitListener {
         helper.removePair(p);
         if (currentPair == p) {
             drawerActivity.discardExerciseFragmentState();
-            StartRound();
+            currentPair = null;
         }
     }
 
@@ -133,16 +138,18 @@ public class MyApplication extends Application implements OnInitListener {
         return true;
     }
 
-    void StartRound() {
-        if (exerciseType == ExerciseType.Listening) { // TODO: This condition can never hold, the app works though.
+    void StartRound() { // TODO: Move this function into ExerciseFragment
+        if (listeningFragment != null && listeningFragment.isAdded()) {
             currentPair = null;
+            listeningFragment.newRound();
         }
-        else {
+        else if (exerciseFragment != null && exerciseFragment.isAdded()){
             double randomDouble = new Random().nextDouble();
+            ExerciseType newExerciseType;
             if (randomDouble < MC_PROBABILITY)
-                exerciseType = ExerciseType.MC;
+                newExerciseType = ExerciseType.MC;
             else
-                exerciseType = ExerciseType.Writing;
+                newExerciseType = ExerciseType.Writing;
             if (selectionMethod == SelectionMethod.SMART) {
                 ArrayList<Pair> candidates = new ArrayList<>();
                 int smallestNext = -1;
@@ -177,14 +184,12 @@ public class MyApplication extends Application implements OnInitListener {
                 currentPair = PairChooser.ChoosePairRandom(this);
                 isCurrentPairRandom = true;
             }
-        }
-        if (exerciseFragment != null && exerciseFragment.isAdded()) {
-            exerciseFragment.ChangeExercise(currentPair, exerciseType);
+            exerciseFragment.ChangeExercise(currentPair, newExerciseType);
         }
     }
 
     void FinishRound(boolean isPass) {
-        if (exerciseType != ExerciseType.Listening) { // TODO: This condition can never hold.
+        if (exerciseFragment != null && exerciseFragment.isAdded()) {
             if (isPass) {
                 currentPair.period *= 2;
                 if (currentPair.period > MaxWordPeriod)

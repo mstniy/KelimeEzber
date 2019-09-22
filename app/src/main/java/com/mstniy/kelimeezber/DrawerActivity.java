@@ -100,6 +100,7 @@ public class DrawerActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             ExerciseFragment exerciseFragment = (ExerciseFragment) Fragment.instantiate(this, ExerciseFragment.class.getName());
             getSupportFragmentManager().beginTransaction().add(R.id.main_fragment_frame, exerciseFragment).commit();
+            getSupportFragmentManager().executePendingTransactions();
             navView.setCheckedItem(R.id.drawer_exercise);
         }
         getExternalStoragePermission(this);
