@@ -1,6 +1,8 @@
 package com.mstniy.kelimeezber;
 
-class Pair {
+import java.io.Serializable;
+
+class Pair implements Serializable {
     public long id;
     public String first;
     public String second;

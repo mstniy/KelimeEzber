@@ -20,6 +20,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     final double FWD_PROBABILITY = 0.5;
     final double FOREIGN_TEXT_SHOWN_PROB = 0.5;
 
+    ExerciseFragment exerciseFragment;
     MyApplication app;
     Button[] buttons = new Button[4];
     boolean[] buttonsHighlighted = new boolean[4];
@@ -45,6 +46,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
                 }
             });
         }
+        exerciseFragment = (ExerciseFragment)getParentFragment();
         created = true;
         SoftKeyboardHelper.hideSoftKeyboard(getActivity());
         return rootView;
@@ -53,14 +55,14 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     void maybeSetLabel() {
         if (currentFwd) {
             if (foreignTextShown)
-                label.setText(app.currentPair.first);
+                label.setText(exerciseFragment.currentPair.first);
         }
         else
-            label.setText(app.currentPair.second);
+            label.setText(exerciseFragment.currentPair.second);
     }
 
     void setLabel() {
-        label.setText(currentFwd ? app.currentPair.first : app.currentPair.second);
+        label.setText(currentFwd ? exerciseFragment.currentPair.first : exerciseFragment.currentPair.second);
     }
 
     void newRound(Pair p) {
@@ -103,16 +105,14 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     }
 
     private void buttonClicked(Button button) {
-        if (app.currentPair != null) {
-            if (app.isACorrectAnswer(button.getText().toString(), currentFwd)) {
-                app.FinishRound(isPass);
-            } else {
-                isPass = false;
-                setLabel();
-                for (int i = 0; i < 4; i++)
-                    if (app.isACorrectAnswer(buttons[i].getText().toString(), currentFwd))
-                        ChangeColorOfButton(i, true);
-            }
+        if (exerciseFragment.isACorrectAnswer(button.getText().toString(), currentFwd)) {
+            exerciseFragment.FinishRound(isPass);
+        } else {
+            isPass = false;
+            setLabel();
+            for (int i = 0; i < 4; i++)
+                if (exerciseFragment.isACorrectAnswer(buttons[i].getText().toString(), currentFwd))
+                    ChangeColorOfButton(i, true);
         }
     }
 
@@ -140,8 +140,8 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
 
-        if (savedInstanceState == null) {
-            newRound(app.currentPair);
+        if (savedInstanceState == null || exerciseFragment.childIgnoreState) {
+            newRound(exerciseFragment.currentPair);
             return ;
         }
 
@@ -149,7 +149,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
 
         foreignTextShown = savedInstanceState.getBoolean("foreignTextShown");
 
-        maybeSetLabel(); //TODO: Move currentPair into exercisefragment, save it as part of its state. Selection logic shall also be moved into exerciseFragment.
+        maybeSetLabel();
 
         CharSequence[] buttonTexts = savedInstanceState.getCharSequenceArray("buttonTexts");
         for (int i=0; i<4; i++)
@@ -167,6 +167,6 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     @Override
     public void unmuted() {
         if (currentFwd)
-            app.speak(app.currentPair.first);
+            app.speak(exerciseFragment.currentPair.first);
     }
 }

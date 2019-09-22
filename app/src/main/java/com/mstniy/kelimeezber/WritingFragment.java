@@ -31,6 +31,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     final private double FROM_FOREIGN_SPEECH_PROB = 0.5; // Valid only if the app is not muted.
 
     MyApplication app;
+    ExerciseFragment exerciseFragment;
     Button backspace;
     boolean created = false;
     Button hintButton;
@@ -73,6 +74,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
             }
         });
         letterTable = rootView.findViewById(R.id.letter_table);
+        exerciseFragment = (ExerciseFragment)getParentFragment();
         created = true;
         return rootView;
     }
@@ -126,9 +128,9 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
                 SoftKeyboardHelper.showSoftKeyboard(getActivity());
             }
             if (fromForeignSpeech)
-                app.speak(app.currentPair.first);
+                app.speak(exerciseFragment.currentPair.first);
             else
-                label.setText(app.currentPair.second);
+                label.setText(exerciseFragment.currentPair.second);
         }
     }
 
@@ -159,15 +161,17 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     void EditTextChanged() {
         if (suppressEditTextChangedCallback)
             return ;
-        if ((letterTableAvailable && userInput.getText().toString().compareTo(app.currentPair.first) == 0) ||
-                (letterTableAvailable == false && app.isACorrectAnswer(userInput.getText().toString(), false))) {
+        if (isAdded() == false)
+            return ;
+        if ((letterTableAvailable && userInput.getText().toString().compareTo(exerciseFragment.currentPair.first) == 0) ||
+                (letterTableAvailable == false && exerciseFragment.isACorrectAnswer(userInput.getText().toString(), false))) {
             userInput.setText("");
-            app.FinishRound(isPass);
+            exerciseFragment.FinishRound(isPass);
         }
     }
 
     void HintButtonClicked() {
-        Pair currentPair = app.currentPair;
+        Pair currentPair = exerciseFragment.currentPair;
         isPass = false;
         hintView.setText(currentPair.first);
         label.setText(currentPair.second);
@@ -218,8 +222,8 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
 
-        if (savedInstanceState == null) {
-            newRound(app.currentPair);
+        if (savedInstanceState == null || exerciseFragment.childIgnoreState) {
+            newRound(exerciseFragment.currentPair);
             return ;
         }
 
@@ -227,15 +231,15 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         fromForeignSpeech = savedInstanceState.getBoolean("fromForeignSpeech");
 
         if (fromForeignSpeech == false)
-            label.setText(app.currentPair.second);
+            label.setText(exerciseFragment.currentPair.second);
         else
             label.setText("");
 
         isPass = savedInstanceState.getBoolean("isPass");
 
         if (isPass == false) {
-            hintView.setText(app.currentPair.first);
-            label.setText(app.currentPair.second);
+            hintView.setText(exerciseFragment.currentPair.first);
+            label.setText(exerciseFragment.currentPair.second);
         }
         else
             hintView.setText("");
@@ -248,6 +252,6 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     @Override
     public void unmuted() {
         if (fromForeignSpeech)
-            app.speak(app.currentPair.first);
+            app.speak(exerciseFragment.currentPair.first);
     }
 }

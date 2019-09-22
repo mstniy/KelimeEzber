@@ -156,7 +156,7 @@ public class ListeningFragment extends Fragment implements ExerciseFragmentInter
                         break;
                     }
                 if (correctAnswer)
-                    app.FinishRound(true);
+                    newRound();
             }
 
         } else {

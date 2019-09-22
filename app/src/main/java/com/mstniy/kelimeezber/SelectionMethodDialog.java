@@ -21,9 +21,9 @@ public class SelectionMethodDialog extends DialogFragment {
                     sm = SelectionMethod.NEW;
                 else if (which == 2)
                     sm = SelectionMethod.RANDOM;
-                if (app.selectionMethod != sm) {
-                    app.selectionMethod = sm;
-                    app.StartRound();
+                if (app.exerciseFragment.selectionMethod != sm) {
+                    app.exerciseFragment.selectionMethod = sm;
+                    app.exerciseFragment.StartRound(true);
                 }
             }
         });

@@ -24,16 +24,11 @@ public class MyApplication extends Application implements OnInitListener {
     static final int MaxWordPeriod = 1<<16;
     static final int WordDropPeriod = 128;
     private static final String TAG = MyApplication.class.getName();
-    final double MC_PROBABILITY = 0.5;
-    Pair currentPair = null;
     ExerciseFragment exerciseFragment;
     ListeningFragment listeningFragment;
     DrawerActivity drawerActivity;
     DatabaseHelper helper = null;
-    boolean isCurrentPairRandom;
     Fraction randomPassFraction;
-    int roundId;
-    SelectionMethod selectionMethod = SelectionMethod.SMART;
     MutableLiveData<Boolean> sortByPeriod = new MutableLiveData<>();
     TextToSpeech tts;
     boolean isMuted = true;
@@ -43,6 +38,7 @@ public class MyApplication extends Application implements OnInitListener {
     HashMap<String, HashSet<String>> wordTranslationsFwd = new HashMap<>();
     String audioDatasetPath = null;
     MediaPlayer mediaPlayer = new MediaPlayer();
+    int roundId;
 
     public void onInit(int status) {
         if (status != 0 || tts.setLanguage(new Locale("sv", "SE")) == -2) {
@@ -72,20 +68,15 @@ public class MyApplication extends Application implements OnInitListener {
         tts = new TextToSpeech(this, this);
     }
 
-    void UpdatePair(Pair p) {
-        helper.updatePair(p);
-    }
 
     private void AddPairToAppState(Pair p) {
         wlist.add(p);
-        if (!wordTranslationsFwd.containsKey(p.first)) {
+        if (!wordTranslationsFwd.containsKey(p.first))
             wordTranslationsFwd.put(p.first, new HashSet());
-        }
-        if (!wordTranslationsBwd.containsKey(p.second)) {
+        if (!wordTranslationsBwd.containsKey(p.second))
             wordTranslationsBwd.put(p.second, new HashSet());
-        }
-        (wordTranslationsFwd.get(p.first)).add(p.second);
-        (wordTranslationsBwd.get(p.second)).add(p.first);
+        wordTranslationsFwd.get(p.first).add(p.second);
+        wordTranslationsBwd.get(p.second).add(p.first);
     }
 
     void AddPair(Pair p) {
@@ -93,28 +84,26 @@ public class MyApplication extends Application implements OnInitListener {
         helper.insertPair(p);
     }
 
+    void UpdatePair(Pair p) {
+        helper.updatePair(p);
+    }
+
     void RemovePair(Pair p) {
         wlist.remove(p);
         (wordTranslationsFwd.get(p.first)).remove(p.second);
-        if ((wordTranslationsFwd.get(p.first)).isEmpty()) {
+        if (wordTranslationsFwd.get(p.first).isEmpty()) {
             wordTranslationsFwd.remove(p.first);
         }
-        (wordTranslationsBwd.get(p.second)).remove(p.first);
-        if ((wordTranslationsBwd.get(p.second)).isEmpty()) {
+        wordTranslationsBwd.get(p.second).remove(p.first);
+        if (wordTranslationsBwd.get(p.second).isEmpty())
             wordTranslationsBwd.remove(p.second);
-        }
         helper.removePair(p);
-        if (currentPair == p) {
-            drawerActivity.discardExerciseFragmentState();
-            currentPair = null;
-        }
     }
 
     boolean SyncStateWithDB() {
         wlist.clear();
         wordTranslationsFwd.clear();
         wordTranslationsBwd.clear();
-        currentPair = null;
         Pair[] pairs = helper.getPairs();
         if (pairs.length == 0) {
             Pair pair = new Pair(0, "sedan", "since",1, -1);
@@ -136,87 +125,6 @@ public class MyApplication extends Application implements OnInitListener {
         audioDatasetPath = helper.getAudioDatasetPath();
         roundId = helper.getRoundID();
         return true;
-    }
-
-    void StartRound() { // TODO: Move this function into ExerciseFragment
-        if (listeningFragment != null && listeningFragment.isAdded()) {
-            currentPair = null;
-            listeningFragment.newRound();
-        }
-        else if (exerciseFragment != null && exerciseFragment.isAdded()){
-            double randomDouble = new Random().nextDouble();
-            ExerciseType newExerciseType;
-            if (randomDouble < MC_PROBABILITY)
-                newExerciseType = ExerciseType.MC;
-            else
-                newExerciseType = ExerciseType.Writing;
-            if (selectionMethod == SelectionMethod.SMART) {
-                ArrayList<Pair> candidates = new ArrayList<>();
-                int smallestNext = -1;
-                for (Pair p : wlist) {
-                    if (p.next == -1)
-                        continue;
-                    if (smallestNext == -1 || p.next < smallestNext)
-                        smallestNext = p.next;
-                }
-                Log.d(TAG, "smallestNext: " + smallestNext);
-                if (smallestNext != -1 && smallestNext <= roundId) {
-                    for (Pair p : wlist) {
-                        if (p.next == smallestNext)
-                            candidates.add(p);
-                    }
-                }
-                Log.d(TAG, "candidatesSize: " + candidates.size());
-                if (candidates.size() == 0) {
-                    isCurrentPairRandom = true;
-                    currentPair = PairChooser.ChoosePairRandom(this);
-                }
-                else {
-                    isCurrentPairRandom = false;
-                    currentPair = candidates.get(new Random().nextInt(candidates.size()));
-                }
-            }
-            else if (selectionMethod == SelectionMethod.NEW) {
-                currentPair = PairChooser.ChoosePairNew(this);
-                isCurrentPairRandom = false;
-            }
-            else if (selectionMethod == SelectionMethod.RANDOM) {
-                currentPair = PairChooser.ChoosePairRandom(this);
-                isCurrentPairRandom = true;
-            }
-            exerciseFragment.ChangeExercise(currentPair, newExerciseType);
-        }
-    }
-
-    void FinishRound(boolean isPass) {
-        if (exerciseFragment != null && exerciseFragment.isAdded()) {
-            if (isPass) {
-                currentPair.period *= 2;
-                if (currentPair.period > MaxWordPeriod)
-                    currentPair.period = 0;
-            }
-            else {
-                if (currentPair.period == 0  || currentPair.period > WordDropPeriod)
-                    currentPair.period = WordDropPeriod;
-                else if (currentPair.period > 1)
-                    currentPair.period /= 2;
-            }
-            if (selectionMethod == SelectionMethod.SMART) {
-                if (currentPair.period != 0)
-                    currentPair.next = roundId + currentPair.period;
-                else
-                    currentPair.next = -1;
-                roundId++;
-                helper.setRoundID(roundId);
-            }
-            UpdatePair(currentPair);
-            if (isCurrentPairRandom) {
-                randomPassFraction.a += isPass ? 1 : 0;
-                randomPassFraction.b++;
-                helper.setRandomPassFraction(randomPassFraction);
-            }
-        }
-        StartRound();
     }
 
     void speak(String s) {
@@ -244,12 +152,5 @@ public class MyApplication extends Application implements OnInitListener {
 
     void stopPlayingAudio() {
         mediaPlayer.stop();
-    }
-
-    boolean isACorrectAnswer(String s, boolean currentFwd) {
-        if (currentFwd)
-            return (wordTranslationsFwd.get(currentPair.first)).contains(s);
-        else
-            return (wordTranslationsBwd.get(currentPair.second)).contains(s);
     }
 }
