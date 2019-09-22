@@ -39,13 +39,13 @@ class AudioAndWords implements Serializable {
     }
 }
 
-public class ListeningFragment extends Fragment implements ExerciseFragmentInterface {
+public class ListeningFragment extends Fragment {
     final String TAG = getClass().getName();
     final int MINIMUM_SENTENCE_LENGTH_IN_WORDS = 4;
 
     MyApplication app;
     boolean created = false;
-    Button hintButton;
+    Button hintButton, replayButton;
     TextView hintView;
     FlexboxLayout wordTableInput, wordTableOptions;
     ArrayList<AudioAndWords> ats = new ArrayList<>();
@@ -66,6 +66,13 @@ public class ListeningFragment extends Fragment implements ExerciseFragmentInter
         hintButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 HintButtonClicked();
+            }
+        });
+        replayButton = rootView.findViewById(R.id.replay_button);
+        replayButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ReplayButtonClicked();
             }
         });
         wordTableInput = rootView.findViewById(R.id.word_box_input);
@@ -236,8 +243,7 @@ public class ListeningFragment extends Fragment implements ExerciseFragmentInter
         app.stopPlayingAudio();
     }
 
-    @Override
-    public void unmuted() {
+    public void ReplayButtonClicked() {
         app.playAudio(p.audioPath);
     }
 }
