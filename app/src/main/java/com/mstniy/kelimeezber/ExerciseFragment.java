@@ -132,6 +132,7 @@ public class ExerciseFragment extends Fragment {
             }
             app.audioDatasetPath = path;
             app.helper.setAudioDatasetPath(path);
+            app.MaybeReadAudioDataset();
         }
         else
             super.onActivityResult(requestCode, resultCode, data);

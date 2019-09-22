@@ -9,12 +9,18 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Log;
 
+import com.opencsv.CSVReader;
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 enum SelectionMethod {
     SMART, NEW, RANDOM
@@ -39,6 +45,7 @@ public class MyApplication extends Application implements OnInitListener {
     String audioDatasetPath = null;
     MediaPlayer mediaPlayer = new MediaPlayer();
     int roundId;
+    ArrayList<AudioAndWords> ats;
 
     public void onInit(int status) {
         if (status != 0 || tts.setLanguage(new Locale("sv", "SE")) == -2) {
@@ -124,7 +131,41 @@ public class MyApplication extends Application implements OnInitListener {
         randomPassFraction = helper.getRandomPassFraction();
         audioDatasetPath = helper.getAudioDatasetPath();
         roundId = helper.getRoundID();
+        MaybeReadAudioDataset();
         return true;
+    }
+
+    ArrayList<String> tokenizeWords(String sentence) {
+        sentence = sentence.replace(",", "");
+        sentence = sentence.replace(".", "");
+        sentence = sentence.replace("!", "");
+        sentence = sentence.replace("?", "");
+        sentence = sentence.replace(":", "");
+        sentence = sentence.replace(";", "");
+        final Pattern word_etractor = Pattern.compile("(^| )([^ ]+)");
+        Matcher word_matcher = word_etractor.matcher(sentence);
+        ArrayList<String> list = new ArrayList<>();
+        while (word_matcher.find())
+            list.add(word_matcher.group(2).toLowerCase());
+        return list;
+    }
+
+    void MaybeReadAudioDataset() {
+        ats = new ArrayList<>();
+        try {
+            CSVReader reader = new CSVReader(new FileReader(audioDatasetPath + "/validated.tsv"), '\t');
+            for (String[] line : reader) {
+                String sentence = line[2];
+                ArrayList<String> words = tokenizeWords(sentence);
+                if (words.size() < ListeningFragment.MINIMUM_SENTENCE_LENGTH_IN_WORDS)
+                    continue;
+                String path = audioDatasetPath + "/clips/" + line[1];
+                ats.add(new AudioAndWords(path, words, sentence));
+            }
+        }
+        catch (FileNotFoundException e) {
+            throw new RuntimeException("validated.tsv not found in the audio dataset path.");
+        }
     }
 
     void speak(String s) {

@@ -41,14 +41,13 @@ class AudioAndWords implements Serializable {
 
 public class ListeningFragment extends Fragment {
     final String TAG = getClass().getName();
-    final int MINIMUM_SENTENCE_LENGTH_IN_WORDS = 4;
+    final static int MINIMUM_SENTENCE_LENGTH_IN_WORDS = 4;
 
     MyApplication app;
     boolean created = false;
     Button hintButton, replayButton;
     TextView hintView;
     FlexboxLayout wordTableInput, wordTableOptions;
-    ArrayList<AudioAndWords> ats = new ArrayList<>();
     AudioAndWords p = null;
 
     public void onAttach(Context context) {
@@ -77,20 +76,6 @@ public class ListeningFragment extends Fragment {
         });
         wordTableInput = rootView.findViewById(R.id.word_box_input);
         wordTableOptions = rootView.findViewById(R.id.word_box_options);
-        try {
-            CSVReader reader = new CSVReader(new FileReader(app.audioDatasetPath + "/validated.tsv"), '\t');
-            for (String[] line : reader) {
-                String sentence = line[2];
-                ArrayList<String> words = tokenizeWords(sentence);
-                if (words.size() < MINIMUM_SENTENCE_LENGTH_IN_WORDS)
-                    continue;
-                String path = app.audioDatasetPath + "/clips/" + line[1];
-                ats.add(new AudioAndWords(path, words, sentence));
-            }
-        }
-        catch (FileNotFoundException e) {
-            throw new RuntimeException("validated.tsv not found in the audio dataset path.");
-        }
         created = true;
         SoftKeyboardHelper.hideSoftKeyboard(getActivity());
         return rootView;
@@ -100,23 +85,8 @@ public class ListeningFragment extends Fragment {
         inflater.inflate(R.menu.menu_listening, menu);
     }
 
-    ArrayList<String> tokenizeWords(String sentence) {
-        sentence = sentence.replace(",", "");
-        sentence = sentence.replace(".", "");
-        sentence = sentence.replace("!", "");
-        sentence = sentence.replace("?", "");
-        sentence = sentence.replace(":", "");
-        sentence = sentence.replace(";", "");
-        final Pattern word_etractor = Pattern.compile("(^| )([^ ]+)");
-        Matcher word_matcher = word_etractor.matcher(sentence);
-        ArrayList<String> list = new ArrayList<>();
-        while (word_matcher.find())
-            list.add(word_matcher.group(2).toLowerCase());
-        return list;
-    }
-
     void newRound() {
-        newRound(ats.get(new Random().nextInt(ats.size())));
+        newRound(app.ats.get(new Random().nextInt(app.ats.size())));
     }
 
     TextView CreateButton(String text) {
