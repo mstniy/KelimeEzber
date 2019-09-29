@@ -17,6 +17,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 public class DrawerActivity extends AppCompatActivity {
     private final String TAG = getClass().getName();
@@ -68,6 +69,10 @@ public class DrawerActivity extends AppCompatActivity {
                     case R.id.drawer_listening:
                         if (currentFragment instanceof ListeningFragment)
                             break;
+                        if (app.audioDatasetPath == null) {
+                            Toast.makeText(DrawerActivity.this, "No audio dataset specified", Toast.LENGTH_SHORT).show();
+                            break;
+                        }
                         app.isMuted = false;
                         newFragment = Fragment.instantiate(DrawerActivity.this, ListeningFragment.class.getName());
                         break;

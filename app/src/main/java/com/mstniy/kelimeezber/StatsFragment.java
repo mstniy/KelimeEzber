@@ -43,10 +43,11 @@ public class StatsFragment extends Fragment {
         total.setText(String.valueOf(app.wlist.size()));
         period1View.setText(String.valueOf(period1Count));
         periodInfView.setText(String.valueOf(periodInfCount));
-        if (app.randomPassFraction.b == 0) {
+        Double successFraction = app.helper.getSuccessFraction();
+        if (successFraction == null) {
             estimatedKnown.setText("?");
         } else {
-            estimatedKnown.setText(String.valueOf((app.wlist.size() * app.randomPassFraction.a) / app.randomPassFraction.b));
+            estimatedKnown.setText(String.valueOf(Math.round(app.wlist.size() * successFraction)));
         }
     }
 }

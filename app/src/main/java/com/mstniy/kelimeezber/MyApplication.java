@@ -34,7 +34,6 @@ public class MyApplication extends Application implements OnInitListener {
     ListeningFragment listeningFragment;
     DrawerActivity drawerActivity;
     DatabaseHelper helper = null;
-    Fraction randomPassFraction;
     MutableLiveData<Boolean> sortByPeriod = new MutableLiveData<>();
     TextToSpeech tts;
     boolean isMuted = true;
@@ -128,7 +127,6 @@ public class MyApplication extends Application implements OnInitListener {
             AddPairToAppState(p2);
             pairReverseLookup.put(Long.valueOf(p2.id), p2);
         }
-        randomPassFraction = helper.getRandomPassFraction();
         audioDatasetPath = helper.getAudioDatasetPath();
         roundId = helper.getRoundID();
         MaybeReadAudioDataset();
@@ -164,7 +162,9 @@ public class MyApplication extends Application implements OnInitListener {
             }
         }
         catch (FileNotFoundException e) {
-            throw new RuntimeException("validated.tsv not found in the audio dataset path.");
+            Log.w(TAG, "validated.tsv not found in the audio dataset path: " + audioDatasetPath);
+            audioDatasetPath = null;
+            helper.setAudioDatasetPath(null);
         }
     }
 

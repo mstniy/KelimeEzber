@@ -240,11 +240,8 @@ public class ExerciseFragment extends Fragment {
             app.helper.setRoundID(app.roundId);
         }
         app.UpdatePair(currentPair);
-        if (isCurrentPairRandom) {
-            app.randomPassFraction.a += isPass ? 1 : 0;
-            app.randomPassFraction.b++;
-            app.helper.setRandomPassFraction(app.randomPassFraction);
-        }
+        if (isCurrentPairRandom)
+            app.helper.pushExerciseResult(isPass);
         StartRound(true);
     }
 
