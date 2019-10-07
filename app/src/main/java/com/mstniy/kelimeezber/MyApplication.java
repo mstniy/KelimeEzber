@@ -18,8 +18,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,19 +55,46 @@ public class MyApplication extends Application implements OnInitListener {
     MediaPlayer mediaPlayer = new MediaPlayer();
     int roundId;
     ArrayList<AudioAndWords> ats;
+    List<TextToSpeech.EngineInfo> ttsEngines;
+    int ttsEngineIndex = 0;
+    String defaultTTSEngine;
 
     public void onInit(int status) {
-        if (status != 0 || tts.setLanguage(new Locale(currentDB.to_iso639, currentDB.to_iso3166)) == -2) {
-            ttsSupported = false;
+        Log.d(TAG, "onInit");
+
+        if (status != 0 || tts.setLanguage(new Locale(currentDB.to_iso639, currentDB.to_iso3166)) < 0) {
+
+            boolean instantiatedTTS = false;
+
+            if (ttsEngines == null) {
+                ttsEngines = tts.getEngines();
+                defaultTTSEngine = tts.getDefaultEngine();
+                Log.i(TAG, "The default TTS engine does not support " + currentDB.to_iso639 + "-" + currentDB.to_iso3166 + ". Trying the other engines.");
+            }
+            while (ttsEngineIndex < ttsEngines.size()) {
+                String newCandidate = ttsEngines.get(ttsEngineIndex).name;
+                if (newCandidate.equals(defaultTTSEngine)) {
+                    Log.i(TAG, "Skipping the default TTS engine: " + defaultTTSEngine);
+                    ttsEngineIndex++;
+                    continue;
+                } else {
+                    tts = new TextToSpeech(getApplicationContext(),this,ttsEngines.get(ttsEngineIndex).name); // This will result in a call to onInit
+                    instantiatedTTS = true;
+                    ttsEngineIndex += 1;
+                    break;
+                }
+            }
+            if (instantiatedTTS == false) { // This means that we have exhausted all the options
+                ttsSupported = false;
+                Log.w(TAG, "None of the installed TTS engines support " + currentDB.to_iso639 + "-" + currentDB.to_iso3166);
+            }
         } else {
             ttsSupported = true;
+            if (ttsEngines == null)
+                Log.i(TAG, "TTS in " + currentDB.to_iso639 + "-" + currentDB.to_iso3166 + " is supported by the default TTS engine " + tts.getDefaultEngine());
+            else // This means that we have enumerated the installed TTS engines
+                Log.i(TAG, "TTS in " + currentDB.to_iso639 + "-" + currentDB.to_iso3166 + " is supported by the non-default TTS engine " + ttsEngines.get(ttsEngineIndex-1).name);
         }
-        String str = TAG;
-        StringBuilder sb = new StringBuilder();
-        sb.append("TextToSpeech in " + currentDB.to_iso639 + "-" + currentDB.to_iso3166 + " is ");
-        sb.append(ttsSupported ? "" : "not ");
-        sb.append("supported.");
-        Log.i(str, sb.toString());
     }
 
     @Override
@@ -96,6 +125,7 @@ public class MyApplication extends Application implements OnInitListener {
             helper.close();
         helper = new DatabaseHelper(ldb);
         SyncStateWithDB();
+        ttsEngines = null; // Thanks to the weird TTS api, the control flow depends on this null-ness.
         tts = new TextToSpeech(this, this);
         if (drawerActivity != null)
             drawerActivity.dropFragmentStates();
