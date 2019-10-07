@@ -11,6 +11,7 @@ import android.util.Log;
 
 import com.opencsv.CSVReader;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -26,11 +27,18 @@ enum SelectionMethod {
     SMART, NEW, RANDOM
 }
 
+class LanguageDB {
+    public String from, to, to_iso639, to_iso3166, dbPath;
+}
+
 public class MyApplication extends Application implements OnInitListener {
     static final int MaxWordPeriod = 1<<16;
     static final int WordDropPeriod = 128;
     private static final String TAG = MyApplication.class.getName();
+    ArrayList<LanguageDB> dbs;
+    LanguageDB currentDB;
     ExerciseFragment exerciseFragment;
+    WordListFragment wordListFragment;
     ListeningFragment listeningFragment;
     DrawerActivity drawerActivity;
     DatabaseHelper helper = null;
@@ -38,23 +46,23 @@ public class MyApplication extends Application implements OnInitListener {
     TextToSpeech tts;
     boolean isMuted = true;
     boolean ttsSupported = false;
-    HashSet<Pair> wlist = new HashSet<>();
-    HashMap<String, HashSet<String>> wordTranslationsBwd = new HashMap<>();
-    HashMap<String, HashSet<String>> wordTranslationsFwd = new HashMap<>();
+    HashSet<Pair> wlist;
+    HashMap<String, HashSet<String>> wordTranslationsBwd;
+    HashMap<String, HashSet<String>> wordTranslationsFwd;
     String audioDatasetPath = null;
     MediaPlayer mediaPlayer = new MediaPlayer();
     int roundId;
     ArrayList<AudioAndWords> ats;
 
     public void onInit(int status) {
-        if (status != 0 || tts.setLanguage(new Locale("sv", "SE")) == -2) {
+        if (status != 0 || tts.setLanguage(new Locale(currentDB.to_iso639, currentDB.to_iso3166)) == -2) {
             ttsSupported = false;
         } else {
             ttsSupported = true;
         }
         String str = TAG;
         StringBuilder sb = new StringBuilder();
-        sb.append("TextToSpeech in Swedish is ");
+        sb.append("TextToSpeech in " + currentDB.to_iso639 + "-" + currentDB.to_iso3166 + " is ");
         sb.append(ttsSupported ? "" : "not ");
         sb.append("supported.");
         Log.i(str, sb.toString());
@@ -69,9 +77,46 @@ public class MyApplication extends Application implements OnInitListener {
     public void onCreate() {
         super.onCreate();
         sortByPeriod.setValue(Boolean.valueOf(true));
-        helper = new DatabaseHelper(this);
+        dbs = discoverDBs();
+        if (dbs.size() == 0) { // No DB has been created so far
+            LanguageDB ldb = new LanguageDB();
+            ldb.dbPath = getExternalFilesDir(null).getPath() + '/' + "0_english_swedish.db";
+            ldb.from = "English";
+            ldb.to = "Swedish";
+            ldb.to_iso639 = "sv";
+            ldb.to_iso3166 = "SE";
+            dbs.add(ldb);
+        }
+        changeDB(dbs.get(0));
+    }
+
+    public void changeDB(LanguageDB ldb) {
+        currentDB = ldb;
+        if (helper != null)
+            helper.close();
+        helper = new DatabaseHelper(ldb);
         SyncStateWithDB();
         tts = new TextToSpeech(this, this);
+        if (drawerActivity != null)
+            drawerActivity.dropFragmentStates();
+        if (exerciseFragment != null && exerciseFragment.isAdded())
+            exerciseFragment.dbChanged();
+    }
+
+    private ArrayList<LanguageDB> discoverDBs() {
+        String DATABASE_PATH = getExternalFilesDir(null).getPath();
+        File[] files = new File(DATABASE_PATH).listFiles();
+        ArrayList<LanguageDB> dbs = new ArrayList<>();
+        for (int i=0; i<files.length; i++) {
+            if (files[i].getName().endsWith(".db") == false) // SQLite creates auxiliary files. Ignore them.
+                continue;
+            LanguageDB dummyldb = new LanguageDB();
+            dummyldb.dbPath = files[i].getAbsolutePath(); // Other fields in LanguageDB (*from* and *to*) are only used in case the DB is not found
+            DatabaseHelper helper = new DatabaseHelper(dummyldb);
+            dbs.add(helper.getLanguageDB());
+            helper.close();
+        }
+        return dbs;
     }
 
 
@@ -107,9 +152,9 @@ public class MyApplication extends Application implements OnInitListener {
     }
 
     boolean SyncStateWithDB() {
-        wlist.clear();
-        wordTranslationsFwd.clear();
-        wordTranslationsBwd.clear();
+        wlist = new HashSet<>();
+        wordTranslationsFwd = new HashMap<>();
+        wordTranslationsBwd = new HashMap<>();
         Pair[] pairs = helper.getPairs();
         if (pairs.length == 0) {
             Pair pair = new Pair(0, "sedan", "since",1, -1);

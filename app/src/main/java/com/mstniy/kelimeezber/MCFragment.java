@@ -76,7 +76,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
             if (p == null)
                 return ;
             currentFwd = new Random().nextDouble() <= FWD_PROBABILITY;
-            if (app.isMuted == false)
+            if (app.isMuted == false && app.ttsSupported)
                 foreignTextShown = new Random().nextDouble() <= FOREIGN_TEXT_SHOWN_PROB;
             else
                 foreignTextShown = true;

@@ -2,6 +2,7 @@ package com.mstniy.kelimeezber;
 
 import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.Observer;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -156,6 +157,12 @@ public class WordListFragment extends Fragment {
     RecyclerView mRecyclerView;
     SearchView searchView;
 
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        app = (MyApplication) context.getApplicationContext();
+        app.wordListFragment = this;
+    }
+
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
@@ -201,10 +208,11 @@ public class WordListFragment extends Fragment {
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() != R.id.action_sort) {
-            return super.onOptionsItemSelected(item);
+        if (item.getItemId() == R.id.action_sort) {
+            new SortByDialog().show(getFragmentManager(), "sortby");
+            return true;
         }
-        new SortByDialog().show(getFragmentManager(), "sortby");
-        return true;
+        else
+            return super.onOptionsItemSelected(item);
     }
 }

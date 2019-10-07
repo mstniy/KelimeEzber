@@ -20,6 +20,8 @@ public class AddWordActivity extends AppCompatActivity {
         addButton = findViewById(R.id.addButton);
         edit0 = findViewById(R.id.edit0);
         edit1 = findViewById(R.id.edit1);
+        edit0.setHint(app.currentDB.to);
+        edit1.setHint(app.currentDB.from);
         addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

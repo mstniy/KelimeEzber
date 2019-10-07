@@ -110,4 +110,9 @@ public class DrawerActivity extends AppCompatActivity {
         }
         getExternalStoragePermission(this);
     }
+
+    public void dropFragmentStates() {
+        exerciseFragmentSavedState = null;
+        listeningFragmentSavedState = null;
+    }
 }

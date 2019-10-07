@@ -106,7 +106,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
                 return ;
 
             letterTableAvailable = new Random().nextDouble() <= LETTER_TABLE_AVAILABLE_PROB;
-            if (app.isMuted == false)
+            if (app.isMuted == false && app.ttsSupported)
                 fromForeignSpeech = new Random().nextDouble() <= FROM_FOREIGN_SPEECH_PROB;
             else
                 fromForeignSpeech = false;

@@ -8,11 +8,16 @@ import android.util.Log;
 
 class DatabaseHelper {
     private static final String TAG = DatabaseHelper.class.getName();
-    private static final int DB_VERSION = 3;
+    private static final int DB_VERSION = 4;
     private static final int ERESULTS_QUEUE_LENGTH = 500;
 
     private static final String COLUMN_CURRENT_PAIRQUEUE_INDEX = "current_pairqueue_index";
     private static final String COLUMN_FIRST = "first";
+    private static final String COLUMN_SECOND = "second";
+    private static final String COLUMN_FROM = "from_lang";
+    private static final String COLUMN_TO = "to_lang";
+    private static final String COLUMN_TO_ISO639 = "to_iso639";
+    private static final String COLUMN_TO_ISO3166 = "to_iso3166";
     private static final String COLUMN_ID = "id";
     private static final String COLUMN_MAPPED_ID = "mapped_id";
     private static final String COLUMN_PERIOD = "period";
@@ -20,25 +25,27 @@ class DatabaseHelper {
     private static final String COLUMN_ROUND_ID = "round_id";
     private static final String COLUMN_ERESULTS_INDEX = "eresults_index";
     private static final String COLUMN_RESULT = "result";
-    private static final String COLUMN_SECOND = "second";
     private static final String COLUMN_AUDIO_DATASET_PATH = "audio_dataset_path";
     private static final String CREATE_KELIMELER = "CREATE TABLE IF NOT EXISTS kelimeler(id INTEGER PRIMARY KEY AUTOINCREMENT,first TEXT,second TEXT,period INTEGER,next INTEGER DEFAULT -1)";
     private static final String CREATE_VARIABLES = "CREATE TABLE IF NOT EXISTS variables(id INTEGER PRIMARY KEY AUTOINCREMENT,audio_dataset_path TEXT, round_id INTEGER, eresults_index INTEGER)";
+    private static final String CREATE_CONSTS = "CREATE TABLE IF NOT EXISTS constants(id INTEGER PRIMARY KEY AUTOINCREMENT,from_lang TEXT, to_lang TEXT, to_iso639 TEXT, to_iso3166 TEXT)";
     private static final String CREATE_EXERCISE_RESULTS = "CREATE TABLE IF NOT EXISTS eresults(id INTEGER PRIMARY KEY AUTOINCREMENT,result BOOLEAN)";
     private static final String DATABASE_NAME = "kelimeezber_db";
     private static final String TABLE_KELIMELER = "kelimeler";
     private static final String TABLE_PAIRQUEUE = "pair_queue";
+    private static final String TABLE_CONSTS = "constants";
     private static final String TABLE_VARIABLES = "variables";
     private static final String TABLE_EXERCISE_RESULTS = "eresults";
 
     private SQLiteDatabase db;
 
+    private LanguageDB langDB;
     private int eresults_index;
     private int eresults_length;
 
-    public DatabaseHelper(Context context) {
-        String DATABASE_FILE_PATH = context.getExternalFilesDir(null).getPath() + '/' + DATABASE_NAME;
-        db = SQLiteDatabase.openDatabase(DATABASE_FILE_PATH, null, SQLiteDatabase.OPEN_READWRITE | SQLiteDatabase.CREATE_IF_NECESSARY);
+    public DatabaseHelper(LanguageDB _langDB) {
+        langDB = _langDB;
+        db = SQLiteDatabase.openDatabase(langDB.dbPath, null, SQLiteDatabase.OPEN_READWRITE | SQLiteDatabase.CREATE_IF_NECESSARY);
         db.rawQuery("PRAGMA foreign_keys = ON", null);
         if (db.rawQuery("select DISTINCT tbl_name from sqlite_master where tbl_name = 'kelimeler'", null).getCount() == 0)
             CreateDB();
@@ -59,9 +66,16 @@ class DatabaseHelper {
         db.execSQL(CREATE_VARIABLES);
         db.execSQL("INSERT INTO " + TABLE_VARIABLES + "(audio_dataset_path, round_id, eresults_index) VALUES (0, 0, 0)");
 
-        db.execSQL(CREATE_EXERCISE_RESULTS);
+        db.execSQL(CREATE_CONSTS);
         ContentValues values = new ContentValues();
-        // `id` will be inserted automatically, no need to add it
+        values.put(COLUMN_FROM, langDB.from);
+        values.put(COLUMN_TO, langDB.to);
+        values.put(COLUMN_TO_ISO639, langDB.to_iso639);
+        values.put(COLUMN_TO_ISO3166, langDB.to_iso3166);
+        db.insert(TABLE_CONSTS, null, values);
+
+        db.execSQL(CREATE_EXERCISE_RESULTS);
+        values = new ContentValues();
         values.putNull("result");
         for (int i=0; i<ERESULTS_QUEUE_LENGTH; i++)
             db.insert(TABLE_EXERCISE_RESULTS, null, values);
@@ -82,7 +96,11 @@ class DatabaseHelper {
             From2to3();
             version = 3;
         }
-        if (version == 3)
+        if (version == 3) {
+            From3to4();
+            version = 4;
+        }
+        if (version == 4)
             return ;
         else
             throw new RuntimeException("Unrecognized DB version.");
@@ -147,6 +165,26 @@ class DatabaseHelper {
             db.execSQL("DROP TABLE " + TABLE_VARIABLES);
             db.execSQL("ALTER TABLE variables_tmp RENAME TO variables");
             db.setVersion(3);
+            db.setTransactionSuccessful();
+        }
+        finally {
+            db.endTransaction();
+        }
+    }
+
+    private void From3to4() {
+        Log.v(TAG, "Upgrading the existing DB from version 3 to 4");
+        db.beginTransaction();
+        try {
+            db.execSQL(CREATE_CONSTS);
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_FROM, "English"); // Use default values. We can't look into langDB because it is probably null.
+            values.put(COLUMN_TO, "Swedish");
+            values.put(COLUMN_TO_ISO639, "sv");
+            values.put(COLUMN_TO_ISO3166, "SE");
+            db.insert(TABLE_CONSTS, null, values);
+
+            db.setVersion(4);
             db.setTransactionSuccessful();
         }
         finally {
@@ -236,6 +274,19 @@ class DatabaseHelper {
         int currentQueueIndex = (int) cursor.getLong(ciCurrentPairQueueIndex);
         cursor.close();
         return currentQueueIndex;
+    }
+
+    public LanguageDB getLanguageDB() {
+        LanguageDB ldb = new LanguageDB();
+        ldb.dbPath = langDB.dbPath;
+        Cursor cursor = db.query(TABLE_CONSTS, new String[]{COLUMN_FROM, COLUMN_TO, COLUMN_TO_ISO639, COLUMN_TO_ISO3166}, null, null, null, null, null, null);
+        cursor.moveToFirst();
+        ldb.from = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FROM));
+        ldb.to = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TO));
+        ldb.to_iso639 = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TO_ISO639));
+        ldb.to_iso3166 = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TO_ISO3166));
+        cursor.close();
+        return ldb;
     }
 
     public int getRoundID() {

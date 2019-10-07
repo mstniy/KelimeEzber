@@ -94,7 +94,11 @@ public class ExerciseFragment extends Fragment {
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_selectionmethod) {
+        if (item.getItemId() == R.id.action_selectlang) {
+            new SelectLanguageDialog().show(getFragmentManager(), "selectlang");
+            return true;
+        }
+        else if (item.getItemId() == R.id.action_selectionmethod) {
             new SelectionMethodDialog().show(getFragmentManager(), "selectionmethod");
             return true;
         }
@@ -250,6 +254,10 @@ public class ExerciseFragment extends Fragment {
             return (app.wordTranslationsFwd.get(currentPair.first)).contains(s);
         else
             return (app.wordTranslationsBwd.get(currentPair.second)).contains(s);
+    }
+
+    public void dbChanged() {
+        StartRound(true);
     }
 
     @Override
