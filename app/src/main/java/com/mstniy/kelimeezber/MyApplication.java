@@ -126,6 +126,7 @@ public class MyApplication extends Application implements OnInitListener {
         helper = new DatabaseHelper(ldb);
         SyncStateWithDB();
         ttsEngines = null; // Thanks to the weird TTS api, the control flow depends on this null-ness.
+        ttsEngineIndex = 0;
         tts = new TextToSpeech(this, this);
         if (drawerActivity != null)
             drawerActivity.dropFragmentStates();
