@@ -12,7 +12,7 @@ public class StatsFragment extends Fragment {
     MyApplication app;
     TextView estimatedKnown;
     TextView period1View;
-    TextView periodInfView;
+    TextView periodHighView;
     View rootView;
     TextView total;
 
@@ -22,7 +22,7 @@ public class StatsFragment extends Fragment {
         app = (MyApplication) getContext().getApplicationContext();
         total = rootView.findViewById(R.id.stats_total);
         period1View = rootView.findViewById(R.id.stats_period_1);
-        periodInfView = rootView.findViewById(R.id.stats_period_inf);
+        periodHighView = rootView.findViewById(R.id.stats_period_high);
         estimatedKnown = rootView.findViewById(R.id.stats_estimated_known);
         UpdateStats();
         return rootView;
@@ -30,19 +30,19 @@ public class StatsFragment extends Fragment {
 
     void UpdateStats() {
         int period1Count = 0;
-        int periodInfCount = 0;
+        int periodHighCount = 0;
         Iterator it = app.wlist.iterator();
         while (it.hasNext()) {
             Pair p = (Pair) it.next();
             if (p.period == 1) {
                 period1Count++;
-            } else if (p.period == 0) {
-                periodInfCount++;
+            } else if (p.period == 0 || p.period >= 256) {
+                periodHighCount++;
             }
         }
         total.setText(String.valueOf(app.wlist.size()));
         period1View.setText(String.valueOf(period1Count));
-        periodInfView.setText(String.valueOf(periodInfCount));
+        periodHighView.setText(String.valueOf(periodHighCount));
         Double successFraction = app.helper.getSuccessFraction();
         if (successFraction == null) {
             estimatedKnown.setText("?");

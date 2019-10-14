@@ -35,7 +35,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"
         android:layout_marginTop="8dp"
-        android:text="Number of pairs with period=∞"
+        android:text="Number of pairs with period >= 256"
         android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -76,7 +76,7 @@
         app:layout_constraintTop_toBottomOf="@id/stats_total" />
 
     <TextView
-        android:id="@+id/stats_period_inf"
+        android:id="@+id/stats_period_high"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginRight="8dp"
@@ -95,5 +95,5 @@
         android:text="TextView"
         android:textSize="18sp"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/stats_period_inf" />
+        app:layout_constraintTop_toBottomOf="@id/stats_period_high" />
 </android.support.constraint.ConstraintLayout>
