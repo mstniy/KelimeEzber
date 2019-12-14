@@ -132,6 +132,8 @@ public class MyApplication extends Application implements OnInitListener {
             drawerActivity.dropFragmentStates();
         if (exerciseFragment != null && exerciseFragment.isAdded())
             exerciseFragment.dbChanged();
+        if (wordListFragment != null && wordListFragment.isAdded())
+            wordListFragment.dbChanged();
     }
 
     private ArrayList<LanguageDB> discoverDBs() {

@@ -163,6 +163,12 @@ public class WordListFragment extends Fragment {
         app.wordListFragment = this;
     }
 
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        app.wordListFragment = null;
+    }
+
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
@@ -178,8 +184,7 @@ public class WordListFragment extends Fragment {
         mRecyclerView.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(mLayoutManager);
-        MyApplication myApplication = app;
-        mAdapter = new RecycleViewAdapter(myApplication, myApplication.wlist, this);
+        mAdapter = new RecycleViewAdapter(app, app.wlist, this);
         mRecyclerView.setAdapter(mAdapter);
         searchView = rootView.findViewById(R.id.action_search);
         searchView.setOnQueryTextListener(new OnQueryTextListener() {
@@ -196,6 +201,11 @@ public class WordListFragment extends Fragment {
         return rootView;
     }
 
+    void dbChanged() {
+        mAdapter.setDataset(app.wlist);
+        searchView.setQuery("", false);
+    }
+
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == ADDWORD_REQUEST_CODE) {
@@ -208,7 +218,11 @@ public class WordListFragment extends Fragment {
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_sort) {
+        if (item.getItemId() == R.id.action_selectlang) {
+            new SelectLanguageDialog().show(getFragmentManager(), "selectlang");
+            return true;
+        }
+        else if (item.getItemId() == R.id.action_sort) {
             new SortByDialog().show(getFragmentManager(), "sortby");
             return true;
         }
