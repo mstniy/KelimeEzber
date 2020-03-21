@@ -28,7 +28,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     final String TAG = getClass().getName();
 
     final private double LETTER_TABLE_AVAILABLE_PROB = 0.75;
-    final private double FROM_FOREIGN_SPEECH_PROB = 0.5; // Valid only if the app is not muted.
+    final private double FOREIGN_SPEECH_AVAILABLE_PROB = 0.35; // Valid only if the app is not muted.
 
     MyApplication app;
     ExerciseFragment exerciseFragment;
@@ -40,7 +40,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     FlexboxLayout letterTable;
     EditText userInput;
     boolean letterTableAvailable; // If false, no letter table is given to the user. This is more challenging.
-    boolean fromForeignSpeech; // If false, *label* will be set to the translation in the native language.If true, the translation in the second language is played as audio.
+    boolean foreignSpeechAvailable; // Valid only if the app is not muted.
     boolean suppressEditTextChangedCallback = false;
     boolean isPass;
 
@@ -107,9 +107,9 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
 
             letterTableAvailable = new Random().nextDouble() <= LETTER_TABLE_AVAILABLE_PROB;
             if (app.isMuted == false && app.ttsSupported)
-                fromForeignSpeech = new Random().nextDouble() <= FROM_FOREIGN_SPEECH_PROB;
+                foreignSpeechAvailable = new Random().nextDouble() <= FOREIGN_SPEECH_AVAILABLE_PROB;
             else
-                fromForeignSpeech = false;
+                foreignSpeechAvailable = false;
 
             if (letterTableAvailable) {
                 HashSet<Character> choices = new HashSet<>();
@@ -127,10 +127,9 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
                 userInput.requestFocus();
                 SoftKeyboardHelper.showSoftKeyboard(getActivity());
             }
-            if (fromForeignSpeech)
+            if (foreignSpeechAvailable)
                 app.speak(exerciseFragment.currentPair.first);
-            else
-                label.setText(exerciseFragment.currentPair.second);
+            label.setText(exerciseFragment.currentPair.second);
         }
     }
 
@@ -208,7 +207,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         if (letterTableAvailable == false)
             SoftKeyboardHelper.showSoftKeyboard(getActivity());
 
-        outState.putBoolean("fromForeignSpeech", fromForeignSpeech);
+        outState.putBoolean("foreignSpeechAvailable", foreignSpeechAvailable);
 
         CharSequence[] letters = new CharSequence[letterTable.getChildCount()];
         for (int i=0; i<letterTable.getChildCount(); i++)
@@ -228,12 +227,9 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         }
 
         letterTableAvailable = savedInstanceState.getBoolean("letterTableAvailable");
-        fromForeignSpeech = savedInstanceState.getBoolean("fromForeignSpeech");
+        foreignSpeechAvailable = savedInstanceState.getBoolean("foreignSpeechAvailable");
 
-        if (fromForeignSpeech == false)
-            label.setText(exerciseFragment.currentPair.second);
-        else
-            label.setText("");
+        label.setText(exerciseFragment.currentPair.second);
 
         isPass = savedInstanceState.getBoolean("isPass");
 
@@ -251,7 +247,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
 
     @Override
     public void unmuted() {
-        if (fromForeignSpeech)
+        if (foreignSpeechAvailable)
             app.speak(exerciseFragment.currentPair.first);
     }
 }
