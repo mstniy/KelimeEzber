@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 class MyViewHolder extends RecyclerView.ViewHolder {
+    public View rootView;
     public TextView mTextView0;
     public TextView mTextView1;
     public TextView mTextViewPeriod;
@@ -39,6 +40,7 @@ class MyViewHolder extends RecyclerView.ViewHolder {
 
     public MyViewHolder(View view, TextView _mTextView0, TextView _mTextView1, TextView _mTextViewPeriod, Button _removeButton) {
         super(view);
+        rootView = view;
         mTextView0 = _mTextView0;
         mTextView1 = _mTextView1;
         mTextViewPeriod = _mTextViewPeriod;
@@ -128,16 +130,23 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
         return myViewHolder;
     }
 
-    public void onBindViewHolder(MyViewHolder holder, final int position) {
-        holder.mTextView0.setText((mDataset.get(position)).first);
-        holder.mTextView1.setText((mDataset.get(position)).second);
-        int period = (mDataset.get(position)).period;
+    public void onBindViewHolder(final MyViewHolder holder, final int position) {
+        final Pair p = mDataset.get(position);
+        holder.mTextView0.setText(p.first);
+        holder.mTextView1.setText(p.second);
+        int period = p.period;
         holder.mTextViewPeriod.setText(period > 0 ? String.valueOf(period) : "∞");
         holder.removeButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
-                RecycleViewAdapter.this.app.RemovePair(RecycleViewAdapter.this.mDataset.get(position));
+                RecycleViewAdapter.this.app.RemovePair(p);
                 RecycleViewAdapter recycleViewAdapter = RecycleViewAdapter.this;
                 recycleViewAdapter.setDataset(recycleViewAdapter.app.wlist);
+            }
+        });
+        holder.rootView.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                app.speak(p.first);
             }
         });
     }
