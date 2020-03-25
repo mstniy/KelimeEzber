@@ -1,6 +1,7 @@
 package com.mstniy.kelimeezber;
 
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -100,7 +101,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         if (highlight)
             button.setBackgroundColor(Color.rgb(100, 255, 100));
         else
-            button.setBackgroundResource(android.R.drawable.btn_default);
+            button.setBackgroundColor(Color.rgb(0xD5, 0xD5, 0xD5));
         buttonsHighlighted[buttonIndex] = highlight;
     }
 
