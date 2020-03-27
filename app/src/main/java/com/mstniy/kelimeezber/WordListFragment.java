@@ -146,7 +146,7 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
         holder.rootView.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                app.speak(p.first);
+                app.forceSpeak(p.first);
             }
         });
     }

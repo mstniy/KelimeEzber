@@ -246,9 +246,15 @@ public class MyApplication extends Application implements OnInitListener {
         }
     }
 
-    void speak(String s) {
-        if (ttsSupported && !isMuted) {
+    void forceSpeak(String s) {
+        if (ttsSupported) {
             tts.speak(s, 0, null);
+        }
+    }
+
+    void speak(String s) {
+        if (!isMuted) {
+            forceSpeak(s);
         }
     }
 
