@@ -51,6 +51,7 @@ public class MyApplication extends Application implements OnInitListener {
     HashSet<Pair> wlist;
     HashMap<String, HashSet<String>> wordTranslationsBwd;
     HashMap<String, HashSet<String>> wordTranslationsFwd;
+    ArrayList<StampedEstimate> estimates;
     String audioDatasetPath = null;
     MediaPlayer mediaPlayer = new MediaPlayer();
     int roundId;
@@ -208,6 +209,7 @@ public class MyApplication extends Application implements OnInitListener {
         audioDatasetPath = helper.getAudioDatasetPath();
         roundId = helper.getRoundID();
         MaybeReadAudioDataset();
+        estimates = helper.getEstimates();
         return true;
     }
 
@@ -243,6 +245,19 @@ public class MyApplication extends Application implements OnInitListener {
             Log.w(TAG, "validated.tsv not found in the audio dataset path: " + audioDatasetPath);
             audioDatasetPath = null;
             helper.setAudioDatasetPath(null);
+        }
+    }
+
+    void pushEstimate(int estimate) {
+        helper.pushEstimate(estimate, estimates);
+    }
+
+    Integer getKnownEstimate() {
+        Double successFraction = helper.getSuccessFraction();
+        if (successFraction == null) {
+            return null;
+        } else {
+            return (int)Math.round(wlist.size() * successFraction);
         }
     }
 

@@ -3,13 +3,28 @@ package com.mstniy.kelimeezber;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
+class StampedEstimate {
+    public long timestamp;
+    public int estimate;
+
+    public StampedEstimate(long _timestamp, int _estimate) {
+        timestamp = _timestamp;
+        estimate = _estimate;
+    }
+}
+
 class DatabaseHelper {
     private static final String TAG = DatabaseHelper.class.getName();
-    private static final int DB_VERSION = 4;
+    private static final int DB_VERSION = 5;
     private static final int ERESULTS_QUEUE_LENGTH = 500;
+    private static final int MAX_ESTIMATE_COUNT = 365*10; // One estimate per day -> 10 years
 
     private static final String COLUMN_CURRENT_PAIRQUEUE_INDEX = "current_pairqueue_index";
     private static final String COLUMN_FIRST = "first";
@@ -26,16 +41,19 @@ class DatabaseHelper {
     private static final String COLUMN_ERESULTS_INDEX = "eresults_index";
     private static final String COLUMN_RESULT = "result";
     private static final String COLUMN_AUDIO_DATASET_PATH = "audio_dataset_path";
+    private static final String COLUMN_TIME = "time";
+    private static final String COLUMN_ESTIMATE = "estimate";
     private static final String CREATE_KELIMELER = "CREATE TABLE IF NOT EXISTS kelimeler(id INTEGER PRIMARY KEY AUTOINCREMENT,first TEXT,second TEXT,period INTEGER,next INTEGER DEFAULT -1)";
     private static final String CREATE_VARIABLES = "CREATE TABLE IF NOT EXISTS variables(id INTEGER PRIMARY KEY AUTOINCREMENT,audio_dataset_path TEXT, round_id INTEGER, eresults_index INTEGER)";
     private static final String CREATE_CONSTS = "CREATE TABLE IF NOT EXISTS constants(id INTEGER PRIMARY KEY AUTOINCREMENT,from_lang TEXT, to_lang TEXT, to_iso639 TEXT, to_iso3166 TEXT)";
     private static final String CREATE_EXERCISE_RESULTS = "CREATE TABLE IF NOT EXISTS eresults(id INTEGER PRIMARY KEY AUTOINCREMENT,result BOOLEAN)";
-    private static final String DATABASE_NAME = "kelimeezber_db";
+    private static final String CREATE_ESTIMATES = "CREATE TABLE IF NOT EXISTS estimates(time INTEGER PRIMARY KEY,estimate INTEGER)";
     private static final String TABLE_KELIMELER = "kelimeler";
     private static final String TABLE_PAIRQUEUE = "pair_queue";
     private static final String TABLE_CONSTS = "constants";
     private static final String TABLE_VARIABLES = "variables";
     private static final String TABLE_EXERCISE_RESULTS = "eresults";
+    private static final String TABLE_ESTIMATES = "estimates";
 
     private SQLiteDatabase db;
 
@@ -52,14 +70,14 @@ class DatabaseHelper {
         else if (db.getVersion() != DB_VERSION)
             UpgradeDB(db.getVersion());
         else
-            Log.v(TAG, "No need to upgrade the existing DB, already at version " + DB_VERSION);
+            Log.d(TAG, "No need to upgrade the existing DB, already at version " + DB_VERSION);
 
         eresults_index = getEResultsIndex();
         eresults_length = getEResultsLength();
     }
 
     private void CreateDB() {
-        Log.v(TAG, "Creating DB");
+        Log.d(TAG, "Creating DB");
 
         db.execSQL(CREATE_KELIMELER);
 
@@ -79,6 +97,8 @@ class DatabaseHelper {
         values.putNull("result");
         for (int i=0; i<ERESULTS_QUEUE_LENGTH; i++)
             db.insert(TABLE_EXERCISE_RESULTS, null, values);
+
+        db.execSQL(CREATE_ESTIMATES);
 
         db.setVersion(DB_VERSION);
     }
@@ -100,20 +120,24 @@ class DatabaseHelper {
             From3to4();
             version = 4;
         }
-        if (version == 4)
+        if (version == 4) {
+            From4to5();
+            version = 5;
+        }
+        if (version == 5)
             return ;
         else
             throw new RuntimeException("Unrecognized DB version.");
     }
 
     private void From0to1() {
-        Log.v(TAG, "Upgrading the existing DB from version 0 to 1");
+        Log.d(TAG, "Upgrading the existing DB from version 0 to 1");
         db.execSQL("ALTER TABLE " + TABLE_VARIABLES + " ADD COLUMN " + COLUMN_AUDIO_DATASET_PATH + " TEXT");
         db.setVersion(1);
     }
 
     private void From1to2() {
-        Log.v(TAG, "Upgrading the existing DB from version 1 to 2");
+        Log.d(TAG, "Upgrading the existing DB from version 1 to 2");
         db.beginTransaction();
         try {
             db.execSQL("ALTER TABLE " + TABLE_VARIABLES + " ADD COLUMN " + COLUMN_ROUND_ID + " INTEGER");
@@ -146,7 +170,7 @@ class DatabaseHelper {
     }
 
     private void From2to3() {
-        Log.v(TAG, "Upgrading the existing DB from version 2 to 3");
+        Log.d(TAG, "Upgrading the existing DB from version 2 to 3");
         db.beginTransaction();
         try {
             db.execSQL(CREATE_EXERCISE_RESULTS);
@@ -173,7 +197,7 @@ class DatabaseHelper {
     }
 
     private void From3to4() {
-        Log.v(TAG, "Upgrading the existing DB from version 3 to 4");
+        Log.d(TAG, "Upgrading the existing DB from version 3 to 4");
         db.beginTransaction();
         try {
             db.execSQL(CREATE_CONSTS);
@@ -185,6 +209,20 @@ class DatabaseHelper {
             db.insert(TABLE_CONSTS, null, values);
 
             db.setVersion(4);
+            db.setTransactionSuccessful();
+        }
+        finally {
+            db.endTransaction();
+        }
+    }
+
+    private void From4to5() {
+        Log.d(TAG, "Upgrading the existing DB from version 4 to 5");
+        db.beginTransaction();
+        try {
+            db.execSQL(CREATE_ESTIMATES);
+
+            db.setVersion(5);
             db.setTransactionSuccessful();
         }
         finally {
@@ -328,6 +366,39 @@ class DatabaseHelper {
             return null;
     }
 
+    public ArrayList<StampedEstimate> getEstimates() {
+        Cursor cursor = db.query(TABLE_ESTIMATES, new String[]{COLUMN_TIME, COLUMN_ESTIMATE}, null, null, null, null, null, null);
+        int ciTime = cursor.getColumnIndexOrThrow(COLUMN_TIME);
+        int ciEstimate = cursor.getColumnIndexOrThrow(COLUMN_ESTIMATE);
+        cursor.moveToFirst();
+
+        ArrayList<StampedEstimate> res = new ArrayList<>();
+        while (cursor.isAfterLast() == false) {
+            res.add(new StampedEstimate(cursor.getLong(ciTime), cursor.getInt(ciEstimate)));
+            cursor.moveToNext();
+        }
+        cursor.close();
+        return res;
+    }
+
+    public void pushEstimate(int estimate, ArrayList<StampedEstimate> estimates) {
+        int numEstimates = (int)DatabaseUtils.queryNumEntries(db, TABLE_ESTIMATES);
+        if (numEstimates >= MAX_ESTIMATE_COUNT) { // Don't forget that we'll push one value
+            db.execSQL("DELETE FROM " + TABLE_ESTIMATES + " WHERE " + COLUMN_TIME + " IN ( " +
+                    "SELECT " + COLUMN_TIME + " FROM " + TABLE_ESTIMATES + " ORDER BY " + COLUMN_TIME + " LIMIT " + (numEstimates-MAX_ESTIMATE_COUNT+1)
+            );
+            for (int i=0; i< numEstimates-MAX_ESTIMATE_COUNT+1; i++) // Remove the first few elements
+                estimates.remove(0);
+        }
+        long timestamp = System.currentTimeMillis()/1000;
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_TIME, timestamp);
+        values.put(COLUMN_ESTIMATE, estimate);
+        if (-1 == db.insertWithOnConflict(TABLE_ESTIMATES, null, values, SQLiteDatabase.CONFLICT_REPLACE))
+            throw new RuntimeException("pushEstimate failed");
+        estimates.add(new StampedEstimate(timestamp, estimate));
+    }
+
     public int getEResultsLength() {
         Cursor cursor = db.query(TABLE_EXERCISE_RESULTS, new String[]{COLUMN_ID}, null, null, null, null, null, null);
         int length = cursor.getCount();
@@ -345,7 +416,7 @@ class DatabaseHelper {
     }
 
     public void setAudioDatasetPath(String path) {
-        Log.v(TAG, "Setting audio dataset path to \"" + path + "\"");
+        Log.d(TAG, "Setting audio dataset path to \"" + path + "\"");
         ContentValues values = new ContentValues();
         values.put(COLUMN_AUDIO_DATASET_PATH, path);
         if (db.update(TABLE_VARIABLES, values, COLUMN_ID + "=?", new String[]{"1"}) != 1)

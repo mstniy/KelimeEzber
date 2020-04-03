@@ -179,7 +179,20 @@ public class ExerciseFragment extends Fragment {
             muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode_off, 0, 0, 0);
     }
 
+    void MaybeRecordEstimate() {
+        long lastEstimateTimestamp = 0;
+        if (app.estimates.size() > 0)
+            lastEstimateTimestamp = app.estimates.get(app.estimates.size()-1).timestamp;
+        if (System.currentTimeMillis()/1000-lastEstimateTimestamp > 24*3600) { // One day
+            Integer knownEstimate = app.getKnownEstimate();
+            if (knownEstimate != null)
+                app.pushEstimate(knownEstimate);
+        }
+    }
+
     void StartRound(boolean show) {
+        MaybeRecordEstimate();
+
         double randomDouble = new Random().nextDouble();
         ExerciseType newExerciseType;
         if (randomDouble < MC_PROBABILITY)
