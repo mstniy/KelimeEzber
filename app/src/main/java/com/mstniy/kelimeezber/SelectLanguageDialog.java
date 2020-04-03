@@ -25,7 +25,7 @@ public class SelectLanguageDialog extends DialogFragment {
                     startActivity(new Intent(getContext(), AddLanguageActivity.class));
                 } else {
                     if (app.currentDB != dbs.get(which-1))
-                        app.changeDB(dbs.get(which-1));
+                        app.changeDB(dbs.get(which-1), true);
                 }
             }
         });

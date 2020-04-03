@@ -43,7 +43,7 @@ public class AddLanguageActivity extends AppCompatActivity {
         ldb.to_iso3166 = to_iso3166;
         ldb.dbPath = getExternalFilesDir(null).getPath() + '/' + app.dbs.size() + "_" + from.toLowerCase() + "_" + to.toLowerCase() + ".db";
         app.dbs.add(ldb);
-        app.changeDB(ldb);
+        app.changeDB(ldb, true);
         finish();
     }
 }

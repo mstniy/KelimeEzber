@@ -56,17 +56,17 @@ class DatabaseHelper {
     private static final String TABLE_ESTIMATES = "estimates";
 
     private SQLiteDatabase db;
+    private String dbPath;
 
-    private LanguageDB langDB;
     private int eresults_index;
     private int eresults_length;
 
-    public DatabaseHelper(LanguageDB _langDB) {
-        langDB = _langDB;
-        db = SQLiteDatabase.openDatabase(langDB.dbPath, null, SQLiteDatabase.OPEN_READWRITE | SQLiteDatabase.CREATE_IF_NECESSARY);
+    public DatabaseHelper(LanguageDB langDB, boolean create_if_necessary) {
+        dbPath = langDB.dbPath;
+        db = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READWRITE | (create_if_necessary ? SQLiteDatabase.CREATE_IF_NECESSARY : 0));
         db.rawQuery("PRAGMA foreign_keys = ON", null);
         if (db.rawQuery("select DISTINCT tbl_name from sqlite_master where tbl_name = 'kelimeler'", null).getCount() == 0)
-            CreateDB();
+            CreateDB(langDB);
         else if (db.getVersion() != DB_VERSION)
             UpgradeDB(db.getVersion());
         else
@@ -76,7 +76,7 @@ class DatabaseHelper {
         eresults_length = getEResultsLength();
     }
 
-    private void CreateDB() {
+    private void CreateDB(LanguageDB langDB) {
         Log.d(TAG, "Creating DB");
 
         db.execSQL(CREATE_KELIMELER);
@@ -202,7 +202,7 @@ class DatabaseHelper {
         try {
             db.execSQL(CREATE_CONSTS);
             ContentValues values = new ContentValues();
-            values.put(COLUMN_FROM, "English"); // Use default values. We can't look into langDB because it is probably null.
+            values.put(COLUMN_FROM, "English"); // We have to use default values because db versions before 4 did not include language info.
             values.put(COLUMN_TO, "Swedish");
             values.put(COLUMN_TO_ISO639, "sv");
             values.put(COLUMN_TO_ISO3166, "SE");
@@ -316,7 +316,7 @@ class DatabaseHelper {
 
     public LanguageDB getLanguageDB() {
         LanguageDB ldb = new LanguageDB();
-        ldb.dbPath = langDB.dbPath;
+        ldb.dbPath = dbPath;
         Cursor cursor = db.query(TABLE_CONSTS, new String[]{COLUMN_FROM, COLUMN_TO, COLUMN_TO_ISO639, COLUMN_TO_ISO3166}, null, null, null, null, null, null);
         cursor.moveToFirst();
         ldb.from = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FROM));

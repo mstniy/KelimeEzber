@@ -2,6 +2,8 @@ package com.mstniy.kelimeezber;
 
 import android.app.Application;
 import android.arch.lifecycle.MutableLiveData;
+import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteException;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -15,6 +17,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.SQLClientInfoException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,7 +39,12 @@ class LanguageDB {
 public class MyApplication extends Application implements OnInitListener {
     static final int MaxWordPeriod = 1<<16;
     static final int WordDropPeriod = 128;
+
+    private static final String DB_PATH_COLUMN = "db_path";
+    private static final String PREFERENCES_NAME = "mypref";
+
     private static final String TAG = MyApplication.class.getName();
+    SharedPreferences preferences;
     ArrayList<LanguageDB> dbs;
     LanguageDB currentDB;
     ExerciseFragment exerciseFragment;
@@ -107,24 +115,42 @@ public class MyApplication extends Application implements OnInitListener {
     public void onCreate() {
         super.onCreate();
         sortByPeriod.setValue(Boolean.valueOf(true));
+        preferences = getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE);
         dbs = discoverDBs();
-        if (dbs.size() == 0) { // No DB has been created so far
-            LanguageDB ldb = new LanguageDB();
-            ldb.dbPath = getExternalFilesDir(null).getPath() + '/' + "0_english_swedish.db";
-            ldb.from = "English";
-            ldb.to = "Swedish";
-            ldb.to_iso639 = "sv";
-            ldb.to_iso3166 = "SE";
-            dbs.add(ldb);
+        LanguageDB ldb = new LanguageDB();
+        ldb.dbPath = preferences.getString(DB_PATH_COLUMN, null);
+        if (ldb.dbPath == null) {
+            if (dbs.size() == 0) { // No DB has been created so far
+                ldb.dbPath = getExternalFilesDir(null).getPath() + '/' + "0_english_swedish.db";
+                ldb.from = "English";
+                ldb.to = "Swedish";
+                ldb.to_iso639 = "sv";
+                ldb.to_iso3166 = "SE";
+                dbs.add(ldb);
+                changeDB(ldb, true);
+            }
+            else {
+                ldb = dbs.get(0);
+                changeDB(ldb, true);
+            }
         }
-        changeDB(dbs.get(0));
+        else {
+            try {
+                changeDB(ldb, false); // changeDB will take care of filling out the missing fields
+            }
+            catch (SQLiteException e) { // The db in the shared preferences probably does not exist anymore
+                changeDB(dbs.get(0), true); // Fall back to the first db that we know of
+            }
+        }
     }
 
-    public void changeDB(LanguageDB ldb) {
-        currentDB = ldb;
-        if (helper != null)
+    public void changeDB(LanguageDB ldb, boolean create_if_necessary) {
+        DatabaseHelper newhelper = new DatabaseHelper(ldb, create_if_necessary);
+        if (helper != null) // Delay closing the existing helper in case the creation of the new one fails
             helper.close();
-        helper = new DatabaseHelper(ldb);
+        helper = newhelper;
+        currentDB = helper.getLanguageDB(); // Note that this may be different from ldb if, for example, some fields are missing from ldb.
+        preferences.edit().putString(DB_PATH_COLUMN, currentDB.dbPath).apply();
         SyncStateWithDB();
         ttsEngines = null; // Thanks to the weird TTS api, the control flow depends on this null-ness.
         ttsEngineIndex = 0;
@@ -146,7 +172,7 @@ public class MyApplication extends Application implements OnInitListener {
                 continue;
             LanguageDB dummyldb = new LanguageDB();
             dummyldb.dbPath = files[i].getAbsolutePath(); // Other fields in LanguageDB (*from* and *to*) are only used in case the DB is not found
-            DatabaseHelper helper = new DatabaseHelper(dummyldb);
+            DatabaseHelper helper = new DatabaseHelper(dummyldb, true);
             dbs.add(helper.getLanguageDB());
             helper.close();
         }
