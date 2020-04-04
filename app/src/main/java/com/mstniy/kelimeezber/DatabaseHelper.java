@@ -10,13 +10,22 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-class StampedEstimate {
+class StampedEstimate implements Comparable<StampedEstimate>{
     public long timestamp;
     public int estimate;
 
     public StampedEstimate(long _timestamp, int _estimate) {
         timestamp = _timestamp;
         estimate = _estimate;
+    }
+
+    @Override
+    public int compareTo(StampedEstimate o) {
+        if (timestamp > o.timestamp)
+            return 1;
+        if (timestamp < o.timestamp)
+            return -1;
+        return 0;
     }
 }
 

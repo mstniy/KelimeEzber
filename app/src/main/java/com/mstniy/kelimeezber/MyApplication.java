@@ -3,6 +3,7 @@ package com.mstniy.kelimeezber;
 import android.app.Application;
 import android.arch.lifecycle.MutableLiveData;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteCantOpenDatabaseException;
 import android.database.sqlite.SQLiteException;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -138,7 +139,7 @@ public class MyApplication extends Application implements OnInitListener {
             try {
                 changeDB(ldb, false); // changeDB will take care of filling out the missing fields
             }
-            catch (SQLiteException e) { // The db in the shared preferences probably does not exist anymore
+            catch (SQLiteCantOpenDatabaseException e) { // The db in the shared preferences probably does not exist anymore
                 changeDB(dbs.get(0), true); // Fall back to the first db that we know of
             }
         }
@@ -152,9 +153,13 @@ public class MyApplication extends Application implements OnInitListener {
         currentDB = helper.getLanguageDB(); // Note that this may be different from ldb if, for example, some fields are missing from ldb.
         preferences.edit().putString(DB_PATH_COLUMN, currentDB.dbPath).apply();
         SyncStateWithDB();
-        ttsEngines = null; // Thanks to the weird TTS api, the control flow depends on this null-ness.
-        ttsEngineIndex = 0;
-        tts = new TextToSpeech(this, this);
+        if (currentDB.to_iso639 == null ||  currentDB.to_iso3166 == null)
+            ttsSupported = false;
+        else {
+            ttsEngines = null; // Thanks to the weird TTS api, the control flow depends on this null-ness.
+            ttsEngineIndex = 0;
+            tts = new TextToSpeech(this, this);
+        }
         if (drawerActivity != null)
             drawerActivity.dropFragmentStates();
         if (exerciseFragment != null && exerciseFragment.isAdded())
