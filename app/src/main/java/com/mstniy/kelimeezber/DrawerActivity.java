@@ -74,6 +74,7 @@ public class DrawerActivity extends AppCompatActivity {
                             break;
                         }
                         app.isMuted = false;
+                        SoftKeyboardHelper.hideSoftKeyboard(DrawerActivity.this);
                         newFragment = Fragment.instantiate(DrawerActivity.this, ListeningFragment.class.getName());
                         break;
                     case R.id.drawer_list:
@@ -84,6 +85,7 @@ public class DrawerActivity extends AppCompatActivity {
                     case R.id.drawer_stats:
                         if (currentFragment instanceof StatsFragment)
                             break;
+                        SoftKeyboardHelper.hideSoftKeyboard(DrawerActivity.this);
                         newFragment = Fragment.instantiate(DrawerActivity.this, StatsFragment.class.getName());
                         break;
                 }

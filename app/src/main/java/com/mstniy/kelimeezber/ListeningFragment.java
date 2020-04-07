@@ -66,7 +66,6 @@ public class ListeningFragment extends Fragment {
                 }
             });
         created = true;
-        SoftKeyboardHelper.hideSoftKeyboard(getActivity());
         return rootView;
     }
 
