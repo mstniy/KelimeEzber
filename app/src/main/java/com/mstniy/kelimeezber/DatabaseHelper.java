@@ -32,7 +32,7 @@ class StampedEstimate implements Comparable<StampedEstimate>{
 class DatabaseHelper {
     private static final String TAG = DatabaseHelper.class.getName();
     private static final int DB_VERSION = 5;
-    private static final int ERESULTS_QUEUE_LENGTH = 500;
+    private static final int ERESULTS_QUEUE_LENGTH = 75;
     private static final int MAX_ESTIMATE_COUNT = 365*10; // One estimate per day -> 10 years
 
     private static final String COLUMN_CURRENT_PAIRQUEUE_INDEX = "current_pairqueue_index";
@@ -359,14 +359,20 @@ class DatabaseHelper {
         int ciCResult = cursor.getColumnIndexOrThrow(COLUMN_RESULT);
         cursor.moveToFirst();
         double a=0, b=0;
+        int id=0;
         while (cursor.isAfterLast() == false) {
             if (cursor.isNull(ciCResult) == false) {
-                boolean result = cursor.getInt(ciCResult) != 0;
-                if (result)
-                    a++;
-                b++;
+                if (eresults_length <= ERESULTS_QUEUE_LENGTH || // If the eresults table in the DB is larger than ERESULTS_QUEUE_LENGTH, take into account only the last ERESULTS_QUEUE_LENGTH results.
+                        (id>=eresults_index-ERESULTS_QUEUE_LENGTH && id<eresults_index) ||
+                        id-eresults_length>=eresults_index-ERESULTS_QUEUE_LENGTH) {
+                    boolean result = cursor.getInt(ciCResult) != 0;
+                    if (result)
+                        a++;
+                    b++;
+                }
             }
             cursor.moveToNext();
+            id++;
         }
         cursor.close();
         if (b != 0)
