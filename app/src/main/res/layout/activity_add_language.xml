@@ -19,7 +19,9 @@
             android:id="@+id/edit_from_lang"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="From" />
+            android:hint="From" >
+            <requestFocus/>
+        </android.support.design.widget.TextInputEditText>
     </android.support.design.widget.TextInputLayout>
 
     <android.support.design.widget.TextInputLayout

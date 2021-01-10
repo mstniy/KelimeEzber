@@ -12,10 +12,10 @@
         android:roundIcon="@mipmap/ic_launcher_round">
         <activity
             android:name="com.mstniy.kelimeezber.AddWordActivity"
-            android:windowSoftInputMode="stateVisible" />
+            android:windowSoftInputMode="stateAlwaysVisible" />
         <activity
             android:name="com.mstniy.kelimeezber.AddLanguageActivity"
-            android:windowSoftInputMode="stateVisible" />
+            android:windowSoftInputMode="stateAlwaysVisible" />
         <activity
             android:theme="@style/AppTheme.NoActionBar"
             android:label="KelimeEzber"
