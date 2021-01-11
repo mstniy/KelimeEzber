@@ -16,6 +16,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.MultiAutoCompleteTextView;
 import android.widget.Toast;
 
@@ -41,7 +42,7 @@ public class ExerciseFragment extends Fragment {
 
     MyApplication app;
     FrameLayout frame;
-    Button muteButton;
+    ImageView muteButton;
     Pair currentPair = null;
     boolean isCurrentPairRandom;
     SelectionMethod selectionMethod = SelectionMethod.SMART;
@@ -60,9 +61,9 @@ public class ExerciseFragment extends Fragment {
         frame = rootView.findViewById(R.id.exercise_fragment_frame);
         muteButton = rootView.findViewById(R.id.mute_button);
         if (!app.isMuted)
-            muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode, 0, 0, 0);
+            muteButton.setImageResource(android.R.drawable.ic_lock_silent_mode);
         else
-            muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode_off, 0, 0, 0);
+            muteButton.setImageResource(android.R.drawable.ic_lock_silent_mode_off);
         muteButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 ExerciseFragment.this.muteButtonPressed();
@@ -172,11 +173,11 @@ public class ExerciseFragment extends Fragment {
     private void muteButtonPressed() {
         app.isMuted = !app.isMuted;
         if (!app.isMuted) {
-            muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode, 0, 0, 0);
+            muteButton.setImageResource(android.R.drawable.ic_lock_silent_mode);
             ((ExerciseFragmentInterface)getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame)).unmuted();
         }
         else
-            muteButton.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_lock_silent_mode_off, 0, 0, 0);
+            muteButton.setImageResource(android.R.drawable.ic_lock_silent_mode_off);
     }
 
     void MaybeRecordEstimate() {

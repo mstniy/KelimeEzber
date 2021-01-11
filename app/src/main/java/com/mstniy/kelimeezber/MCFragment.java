@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -99,9 +100,10 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     private void ChangeColorOfButton(int buttonIndex, boolean highlight) {
         Button button = buttons[buttonIndex];
         if (highlight)
-            button.setBackgroundColor(Color.rgb(100, 255, 100));
+            button.setBackgroundTintList(ContextCompat.getColorStateList(getContext(), R.color.colorAccent));
+            //button.setBackground(Color.rgb(100, 255, 100));
         else
-            button.setBackgroundColor(Color.rgb(0xD5, 0xD5, 0xD5));
+            button.setBackgroundTintList(ContextCompat.getColorStateList(getContext(), R.color.ButtonBlue));
         buttonsHighlighted[buttonIndex] = highlight;
     }
 

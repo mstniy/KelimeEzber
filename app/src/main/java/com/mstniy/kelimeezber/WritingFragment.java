@@ -16,6 +16,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout.LayoutParams;
+import android.widget.ImageView;
 import android.widget.TextView;
 import com.google.android.flexbox.FlexboxLayout;
 import java.util.ArrayList;
@@ -32,9 +33,9 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
 
     MyApplication app;
     ExerciseFragment exerciseFragment;
-    Button backspace;
+    ImageView backspace;
     boolean created = false;
-    Button hintButton;
+    ImageView hintButton;
     TextView hintView;
     TextView label;
     FlexboxLayout letterTable;
@@ -79,10 +80,9 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         return rootView;
     }
 
-    TextView CreateButton(String s) {
-        TextView b = new TextView(getContext());
+    Button CreateButton(String s) {
+        Button b = new Button(getContext(), null, 0, R.style.BlueButton);
         b.setText(s);
-        b.setBackgroundResource(android.R.drawable.btn_default);
         b.setTextSize(20.0f);
         b.setGravity(Gravity.CENTER);
         b.setOnClickListener(new OnClickListener() {
@@ -91,7 +91,11 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
             }
         });
         float factor = getContext().getResources().getDisplayMetrics().density;
-        b.setLayoutParams(new LayoutParams((int) (factor * 59.0f), (int) (59.0f * factor)));
+        int btnSize = (int)Math.ceil(factor*59);
+        LayoutParams layout = new LayoutParams(btnSize, btnSize);
+        int margin = (int)Math.ceil(factor*3);
+        layout.setMargins(margin, margin, margin, margin);
+        b.setLayoutParams(layout);
         return b;
     }
 
@@ -119,13 +123,15 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
                 ArrayList<Character> choicesArray = new ArrayList<>(choices);
                 Collections.shuffle(choicesArray);
                 for (Character ch : choicesArray) {
-                    TextView b = CreateButton(String.valueOf(ch));
+                    Button b = CreateButton(String.valueOf(ch));
                     letterTable.addView(b);
                 }
+                backspace.setVisibility(View.VISIBLE);
             }
             else {
                 userInput.requestFocus();
                 SoftKeyboardHelper.showSoftKeyboard(getActivity());
+                backspace.setVisibility(View.INVISIBLE);
             }
             if (foreignSpeechAvailable)
                 app.speak(exerciseFragment.currentPair.first);

@@ -22,22 +22,26 @@
         android:layout_marginLeft="24dp"
         android:layout_marginTop="8dp"
         android:layout_marginRight="24dp"
+        android:inputType="textVisiblePassword|textNoSuggestions"
         android:text="EditText"
         android:textSize="16sp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/label" />
 
-    <Button
+    <ImageView
         android:id="@+id/backspace_button"
+        style="@style/BlueButton"
         android:layout_width="59dp"
         android:layout_height="59dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="3dp"
         android:layout_marginRight="16dp"
-        android:drawableStart="@android:drawable/ic_input_delete"
         android:minWidth="0dp"
+        android:tint="#FFFFFF"
+        app:backgroundTint="@color/colorAccent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/user_input" />
+        app:layout_constraintTop_toTopOf="@+id/letter_table"
+        app:srcCompat="@android:drawable/ic_input_delete" />
 
     <com.google.android.flexbox.FlexboxLayout
         android:id="@+id/letter_table"
@@ -45,6 +49,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"
         android:layout_marginTop="16dp"
+        android:layout_marginRight="24dp"
         app:alignContent="flex_start"
         app:alignItems="flex_start"
         app:flexWrap="wrap"
@@ -52,16 +57,19 @@
         app:layout_constraintRight_toLeftOf="@+id/backspace_button"
         app:layout_constraintTop_toBottomOf="@+id/user_input" />
 
-    <Button
+    <ImageView
         android:id="@+id/hint_button"
+        style="@style/BlueButton"
         android:layout_width="59dp"
         android:layout_height="59dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginTop="8dp"
-        android:drawableStart="@android:drawable/ic_menu_compass"
+        android:layout_marginLeft="3dp"
+        android:layout_marginTop="24dp"
         android:minWidth="0dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/letter_table" />
+        android:tint="#FFFFFF"
+        app:backgroundTint="@color/colorAccent"
+        app:layout_constraintLeft_toLeftOf="@id/letter_table"
+        app:layout_constraintTop_toBottomOf="@+id/letter_table"
+        app:srcCompat="@android:drawable/ic_menu_compass" />
     <TextView
         android:id="@+id/hint_view"
         android:layout_width="wrap_content"
