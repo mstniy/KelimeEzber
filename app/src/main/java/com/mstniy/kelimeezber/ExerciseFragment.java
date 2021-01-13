@@ -27,26 +27,26 @@ import java.util.Random;
 
 enum ExerciseType {
     MC,
-    Writing
+    Writing,
+    Matching
 }
 
 interface ExerciseFragmentInterface {
     void unmuted();
+    void newRound();
 }
 
 public class ExerciseFragment extends Fragment {
     static final String TAG = ExerciseFragment.class.getName();
 
     private final int PICKDATASET_REQUEST_CODE = 40914;
-    final double MC_PROBABILITY = 0.5;
+    final double MC_PROBABILITY = 0.75;
+    final double MATCH_PROBABILITY = 0.05;
 
     MyApplication app;
     FrameLayout frame;
     ImageView muteButton;
-    Pair currentPair = null;
-    boolean isCurrentPairRandom;
     SelectionMethod selectionMethod = SelectionMethod.SMART;
-    boolean childIgnoreState;
 
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -71,21 +71,10 @@ public class ExerciseFragment extends Fragment {
         });
 
         if (savedInstanceState != null) {
-            isCurrentPairRandom = savedInstanceState.getBoolean("isCurrentPairRandom");
-
             selectionMethod = (SelectionMethod) savedInstanceState.getSerializable("selectionMethod");
-
-            currentPair = (Pair) savedInstanceState.getSerializable("currentPair");
-
-            if (app.wlist.contains(currentPair) == false) { // The user removed the current pair (from the word list) and switched back to the ExerciseFragment
-                StartRound(false);
-                childIgnoreState = true; //TODO: There's probably a way to instruct Android to drop the saved states of the views under this fragment, but this works, too.
-            }
-            else
-                childIgnoreState = false;
         }
-        else
-            StartRound(true);
+
+        StartRound();
 
         return rootView;
     }
@@ -143,31 +132,39 @@ public class ExerciseFragment extends Fragment {
             super.onActivityResult(requestCode, resultCode, data);
     }
 
-    void ChangeExercise(Pair p, ExerciseType et) {
-        ChangeExercise(p, et, null);
+    void ChangeExercise(ExerciseType et) {
+        ChangeExercise(et, null);
     }
 
-    void ChangeExercise(Pair p, ExerciseType et, SavedState savedSubFragmentState) {
+    ExerciseType getTypeOfExerciseFragment(Fragment f) {
+        if (f instanceof MCFragment)
+            return ExerciseType.MC;
+        if (f instanceof WritingFragment)
+            return ExerciseType.Writing;
+        if (f instanceof MatchingFragment)
+            return ExerciseType.Matching;
+        return null;
+    }
+
+    void ChangeExercise(ExerciseType et, SavedState savedSubFragmentState) {
         Fragment currentFragment = getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame);
         if (currentFragment == null // If the new exercise is of a different type to the one currently shown on the screen, or there is no exercise currently shown on the screen
                 || currentFragment.isAdded() == false // findFragmentById doesn't return null after rotations, even though the old fragment has already detached.
-                || (et == ExerciseType.MC && ! (currentFragment instanceof  MCFragment))
-                || (et == ExerciseType.Writing && ! (currentFragment instanceof  WritingFragment))) {
+                || et != getTypeOfExerciseFragment(currentFragment)) {
             Fragment newFragment = null;
             if (et == ExerciseType.Writing)
                 newFragment = Fragment.instantiate(getContext(), WritingFragment.class.getName());
             else if (et == ExerciseType.MC)
                 newFragment = Fragment.instantiate(getContext(), MCFragment.class.getName());
+            else if (et == ExerciseType.Matching)
+                newFragment = Fragment.instantiate(getContext(), MatchingFragment.class.getName());
             newFragment.setInitialSavedState(savedSubFragmentState);
             getChildFragmentManager().beginTransaction().replace(R.id.exercise_fragment_frame, newFragment).commit();
             getChildFragmentManager().executePendingTransactions();
             return;
         }
 
-        if (et == ExerciseType.MC)
-            ((MCFragment)currentFragment).newRound(p);
-        else if (et == ExerciseType.Writing)
-            ((WritingFragment)currentFragment).newRound(p);
+        ((ExerciseFragmentInterface)currentFragment).newRound();
     }
 
     private void muteButtonPressed() {
@@ -191,98 +188,34 @@ public class ExerciseFragment extends Fragment {
         }
     }
 
-    void StartRound(boolean show) {
+    void StartRound() {
         MaybeRecordEstimate();
 
         double randomDouble = new Random().nextDouble();
         ExerciseType newExerciseType;
         if (randomDouble < MC_PROBABILITY)
             newExerciseType = ExerciseType.MC;
+        else if (randomDouble < MC_PROBABILITY + MATCH_PROBABILITY)
+            newExerciseType = ExerciseType.Matching;
         else
             newExerciseType = ExerciseType.Writing;
-        if (selectionMethod == SelectionMethod.SMART) {
-            ArrayList<Pair> candidates = new ArrayList<>();
-            int smallestNext = -1;
-            for (Pair p : app.wlist) {
-                if (p.next == -1)
-                    continue;
-                if (smallestNext == -1 || p.next < smallestNext)
-                    smallestNext = p.next;
-            }
-            Log.d(TAG, "smallestNext: " + smallestNext);
-            if (smallestNext != -1 && smallestNext <= app.roundId) {
-                for (Pair p : app.wlist)
-                    if (p.next == smallestNext)
-                        candidates.add(p);
-            }
-            Log.d(TAG, "candidatesSize: " + candidates.size());
-            if (candidates.size() == 0) {
-                isCurrentPairRandom = true;
-                currentPair = PairChooser.ChoosePairRandom(app);
-            }
-            else {
-                isCurrentPairRandom = false;
-                currentPair = candidates.get(new Random().nextInt(candidates.size()));
-            }
-        }
-        else if (selectionMethod == SelectionMethod.NEW) {
-            currentPair = PairChooser.ChoosePairNew(app);
-            isCurrentPairRandom = false;
-        }
-        else if (selectionMethod == SelectionMethod.RANDOM) {
-            currentPair = PairChooser.ChoosePairRandom(app);
-            isCurrentPairRandom = true;
-        }
-        if (show)
-            ChangeExercise(currentPair, newExerciseType);
+
+        ChangeExercise(newExerciseType);
     }
 
-    void FinishRound(boolean isPass) {
-        if (isPass) {
-            currentPair.period *= 2;
-            if (currentPair.period > MyApplication.MaxWordPeriod)
-                currentPair.period = 0;
-        }
-        else {
-            if (currentPair.period == 0  || currentPair.period > MyApplication.WordDropPeriod)
-                currentPair.period = MyApplication.WordDropPeriod;
-            else if (currentPair.period > 1)
-                currentPair.period /= 2;
-        }
-        if (selectionMethod == SelectionMethod.SMART) {
-            if (currentPair.period != 0)
-                currentPair.next = app.roundId + currentPair.period;
-            else
-                currentPair.next = -1;
-            app.roundId++;
-            app.helper.setRoundID(app.roundId);
-        }
-        app.UpdatePair(currentPair);
-        if (isCurrentPairRandom)
-            app.helper.pushExerciseResult(isPass);
-        StartRound(true);
-    }
-
-    boolean isACorrectAnswer(String s, boolean currentFwd) {
-        if (currentFwd)
-            return (app.wordTranslationsFwd.get(currentPair.first)).contains(s);
-        else
-            return (app.wordTranslationsBwd.get(currentPair.second)).contains(s);
+    void FinishRound() {
+        StartRound();
     }
 
     public void dbChanged() {
-        StartRound(true);
+        StartRound();
     }
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        outState.putBoolean("isCurrentPairRandom", isCurrentPairRandom);
-
         outState.putSerializable("selectionMethod", selectionMethod);
-
-        outState.putSerializable("currentPair", currentPair);
     }
 
     @Override

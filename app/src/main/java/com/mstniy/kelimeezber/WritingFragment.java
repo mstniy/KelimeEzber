@@ -44,6 +44,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     boolean foreignSpeechAvailable; // Valid only if the app is not muted.
     boolean suppressEditTextChangedCallback = false;
     boolean isPass;
+    PairSelectResult currentPair;
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         app = (MyApplication) getContext().getApplicationContext();
@@ -87,7 +88,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         b.setGravity(Gravity.CENTER);
         b.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
-                ButtonClicked((TextView) v);
+                ButtonClicked((Button) v);
             }
         });
         float factor = getContext().getResources().getDisplayMetrics().density;
@@ -99,25 +100,28 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         return b;
     }
 
-    void newRound(Pair p) {
+    @Override
+    public void newRound() {
         if (created) {
             isPass = true;
             label.setText("");
             hintView.setText("");
+            suppressEditTextChangedCallback = true;
             userInput.setText("");
+            suppressEditTextChangedCallback = false;
             letterTable.removeAllViews();
-            if (p == null)
-                return ;
 
             letterTableAvailable = new Random().nextDouble() <= LETTER_TABLE_AVAILABLE_PROB;
             if (app.isMuted == false && app.ttsSupported)
                 foreignSpeechAvailable = new Random().nextDouble() <= FOREIGN_SPEECH_AVAILABLE_PROB;
             else
                 foreignSpeechAvailable = false;
+            
+            currentPair = PairChooser.ChoosePair(app, exerciseFragment.selectionMethod);
 
             if (letterTableAvailable) {
                 HashSet<Character> choices = new HashSet<>();
-                String word = p.first;
+                String word = currentPair.p.first;
                 for (int i = 0; i < word.length(); i++)
                     choices.add(Character.valueOf(word.charAt(i)));
                 ArrayList<Character> choicesArray = new ArrayList<>(choices);
@@ -134,8 +138,8 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
                 backspace.setVisibility(View.INVISIBLE);
             }
             if (foreignSpeechAvailable)
-                app.speak(exerciseFragment.currentPair.first);
-            label.setText(exerciseFragment.currentPair.second);
+                app.speak(currentPair.p.first);
+            label.setText(currentPair.p.second);
         }
     }
 
@@ -147,7 +151,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         EditTextChanged();
     }
 
-    void ButtonClicked(TextView button) {
+    void ButtonClicked(Button button) {
         int selStart = userInput.getSelectionStart();
         int selEnd = userInput.getSelectionEnd();
         String olds = userInput.getText().toString();
@@ -168,19 +172,19 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
             return ;
         if (isAdded() == false)
             return ;
-        if ((letterTableAvailable && userInput.getText().toString().compareTo(exerciseFragment.currentPair.first) == 0) ||
-                (letterTableAvailable == false && exerciseFragment.isACorrectAnswer(userInput.getText().toString(), false))) {
+        if ((letterTableAvailable && userInput.getText().toString().compareTo(currentPair.p.first) == 0) ||
+                (letterTableAvailable == false && app.isACorrectAnswer(currentPair.p, userInput.getText().toString(), false))) {
             userInput.setText("");
-            exerciseFragment.FinishRound(isPass);
+            PeriodHelper.recordRoundOutcome(app, currentPair.p, isPass, exerciseFragment.selectionMethod == SelectionMethod.SMART, currentPair.wasRandom);
+            exerciseFragment.FinishRound();
         }
     }
 
     void HintButtonClicked() {
-        Pair currentPair = exerciseFragment.currentPair;
         isPass = false;
-        hintView.setText(currentPair.first);
-        label.setText(currentPair.second);
-        app.speak(currentPair.first);
+        hintView.setText(currentPair.p.first);
+        label.setText(currentPair.p.second);
+        app.speak(currentPair.p.first);
     }
 
     void BackspaceClicked() {
@@ -221,27 +225,28 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         outState.putCharSequenceArray("letters", letters);
 
         outState.putBoolean("isPass", isPass);
+        outState.putSerializable("currentPair", currentPair);
     }
 
     @Override
     public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
 
-        if (savedInstanceState == null || exerciseFragment.childIgnoreState) {
-            newRound(exerciseFragment.currentPair);
+        if (savedInstanceState == null || app.wlist.contains(currentPair.p) == false) { // The user removed the current pair (from the word list) and switched back to the exercise tab
+            newRound();
             return ;
         }
 
         letterTableAvailable = savedInstanceState.getBoolean("letterTableAvailable");
         foreignSpeechAvailable = savedInstanceState.getBoolean("foreignSpeechAvailable");
 
-        label.setText(exerciseFragment.currentPair.second);
+        label.setText(currentPair.p.second);
 
         isPass = savedInstanceState.getBoolean("isPass");
 
         if (isPass == false) {
-            hintView.setText(exerciseFragment.currentPair.first);
-            label.setText(exerciseFragment.currentPair.second);
+            hintView.setText(currentPair.p.first);
+            label.setText(currentPair.p.second);
         }
         else
             hintView.setText("");
@@ -249,11 +254,12 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         CharSequence[] letters = savedInstanceState.getCharSequenceArray("letters");
         for (int i=0; i<letters.length; i++)
             letterTable.addView(CreateButton(letters[i].toString()));
+        currentPair = (PairSelectResult)savedInstanceState.getSerializable("currentPair"); // TODO: This duplicates Pair
     }
 
     @Override
     public void unmuted() {
         if (foreignSpeechAvailable)
-            app.speak(exerciseFragment.currentPair.first);
+            app.speak(currentPair.p.first);
     }
 }

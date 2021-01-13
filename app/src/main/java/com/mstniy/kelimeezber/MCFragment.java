@@ -1,7 +1,5 @@
 package com.mstniy.kelimeezber;
 
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -31,6 +29,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     TextView label;
     boolean foreignTextShown; // Valid only if currentFwd == true and the app is not muted
     boolean isPass;
+    PairSelectResult currentPair;
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         app = (MyApplication) getContext().getApplicationContext();
@@ -57,17 +56,18 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     void maybeSetLabel() {
         if (currentFwd) {
             if (foreignTextShown)
-                label.setText(exerciseFragment.currentPair.first);
+                label.setText(currentPair.p.first);
         }
         else
-            label.setText(exerciseFragment.currentPair.second);
+            label.setText(currentPair.p.second);
     }
 
     void setLabel() {
-        label.setText(currentFwd ? exerciseFragment.currentPair.first : exerciseFragment.currentPair.second);
+        label.setText(currentFwd ? currentPair.p.first : currentPair.p.second);
     }
 
-    void newRound(Pair p) {
+    @Override
+    public void newRound() {
         if (created) {
             isPass = true;
             for (int i = 0; i < 4; i++)
@@ -75,8 +75,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
             label.setText("");
             for (int i2 = 0; i2 < 4; i2++)
                 buttons[i2].setText("");
-            if (p == null)
-                return ;
+            currentPair = PairChooser.ChoosePair(app, exerciseFragment.selectionMethod);
             currentFwd = new Random().nextDouble() <= FWD_PROBABILITY;
             if (app.isMuted == false && app.ttsSupported)
                 foreignTextShown = new Random().nextDouble() <= FOREIGN_TEXT_SHOWN_PROB;
@@ -86,14 +85,14 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
             maybeSetLabel();
             for (int i3 = 0; i3 < 4; i3++) {
                 if (i3 == answer)
-                    buttons[i3].setText(currentFwd ? p.second : p.first);
+                    buttons[i3].setText(currentFwd ? currentPair.p.second : currentPair.p.first);
                 else {
-                    Pair p2 = PairChooser.ChoosePairRandom(app);
+                    Pair p2 = PairChooser.ChoosePairRandom(app).p;
                     buttons[i3].setText(currentFwd ? p2.second : p2.first);
                 }
             }
             if (currentFwd)
-                app.speak(p.first);
+                app.speak(currentPair.p.first);
         }
     }
 
@@ -101,20 +100,20 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         Button button = buttons[buttonIndex];
         if (highlight)
             button.setBackgroundTintList(ContextCompat.getColorStateList(getContext(), R.color.colorAccent));
-            //button.setBackground(Color.rgb(100, 255, 100));
         else
             button.setBackgroundTintList(ContextCompat.getColorStateList(getContext(), R.color.ButtonBlue));
         buttonsHighlighted[buttonIndex] = highlight;
     }
 
     private void buttonClicked(Button button) {
-        if (exerciseFragment.isACorrectAnswer(button.getText().toString(), currentFwd)) {
-            exerciseFragment.FinishRound(isPass);
+        if (app.isACorrectAnswer(currentPair.p, button.getText().toString(), currentFwd)) {
+            PeriodHelper.recordRoundOutcome(app, currentPair.p, isPass, exerciseFragment.selectionMethod == SelectionMethod.SMART, currentPair.wasRandom);
+            exerciseFragment.FinishRound();
         } else {
             isPass = false;
             setLabel();
             for (int i = 0; i < 4; i++)
-                if (exerciseFragment.isACorrectAnswer(buttons[i].getText().toString(), currentFwd))
+                if (app.isACorrectAnswer(currentPair.p, buttons[i].getText().toString(), currentFwd))
                     ChangeColorOfButton(i, true);
         }
     }
@@ -124,7 +123,6 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         super.onSaveInstanceState(outState);
 
         outState.putBoolean("currentFwd", currentFwd);
-
         outState.putBoolean("foreignTextShown", foreignTextShown);
 
         CharSequence[] buttonTexts = new CharSequence[4];
@@ -133,25 +131,22 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         outState.putCharSequenceArray("buttonTexts", buttonTexts);
 
         outState.putBooleanArray("buttonsHighlighted", buttonsHighlighted);
-
         outState.putCharSequence("label", label.getText());
-
         outState.putBoolean("isPass", isPass);
+        outState.putSerializable("currentPair", currentPair);
     }
 
     @Override
     public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
 
-        if (savedInstanceState == null || exerciseFragment.childIgnoreState) {
-            newRound(exerciseFragment.currentPair);
+        if (savedInstanceState == null || app.wlist.contains(currentPair.p) == false) { // The user removed the current pair (from the word list) and switched back to the exercise tab
+            newRound();
             return ;
         }
 
         currentFwd = savedInstanceState.getBoolean("currentFwd");
-
         foreignTextShown = savedInstanceState.getBoolean("foreignTextShown");
-
         maybeSetLabel();
 
         CharSequence[] buttonTexts = savedInstanceState.getCharSequenceArray("buttonTexts");
@@ -163,13 +158,13 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
             ChangeColorOfButton(i, buttonsHighlighted[i]);
 
         label.setText(savedInstanceState.getCharSequence("label"));
-
         isPass = savedInstanceState.getBoolean("isPass");
+        currentPair = (PairSelectResult) savedInstanceState.getSerializable("currentPair"); // TODO: This duplicates Pair
     }
 
     @Override
     public void unmuted() {
         if (currentFwd)
-            app.speak(exerciseFragment.currentPair.first);
+            app.speak(currentPair.p.first);
     }
 }

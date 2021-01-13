@@ -29,10 +29,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-enum SelectionMethod {
-    SMART, NEW, RANDOM
-}
-
 class LanguageDB {
     public String from, to, to_iso639, to_iso3166, dbPath;
 }
@@ -323,5 +319,12 @@ public class MyApplication extends Application implements OnInitListener {
 
     void stopPlayingAudio() {
         mediaPlayer.stop();
+    }
+
+    boolean isACorrectAnswer(Pair p, String s, boolean currentFwd) {
+        if (currentFwd)
+            return (wordTranslationsFwd.get(p.first)).contains(s);
+        else
+            return (wordTranslationsBwd.get(p.second)).contains(s);
     }
 }

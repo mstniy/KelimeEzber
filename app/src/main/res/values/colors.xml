@@ -4,4 +4,6 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
     <color name="ButtonBlue">#0098ec</color>
+    <color name="ButtonBlueHighlight">#0267A0</color>
+    <color name="ButtonBlueDisabled">#C8DCE7</color>
 </resources>

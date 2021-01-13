@@ -23,7 +23,7 @@ public class SelectionMethodDialog extends DialogFragment {
                     sm = SelectionMethod.RANDOM;
                 if (app.exerciseFragment.selectionMethod != sm) {
                     app.exerciseFragment.selectionMethod = sm;
-                    app.exerciseFragment.StartRound(true);
+                    app.exerciseFragment.StartRound();
                 }
             }
         });
