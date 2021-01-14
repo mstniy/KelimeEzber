@@ -215,6 +215,12 @@ public class WordListFragment extends Fragment {
         searchView.setQuery("", false);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        SoftKeyboardHelper.showSoftKeyboard(getActivity());
+    }
+
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == ADDWORD_REQUEST_CODE) {

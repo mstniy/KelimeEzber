@@ -111,8 +111,10 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
                 maybeFinished();
             }
             else {
-                PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], false, false, true);
-                PeriodHelper.recordRoundOutcome(app, buttonPairs[highlightedButtonIndex], false, false, true);
+                for (int i=0; i<2; i++) { // We record two bad outcomes because each pair will eventually get a positive outcome (for the round to end)
+                    PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], false, false, true);
+                    PeriodHelper.recordRoundOutcome(app, buttonPairs[highlightedButtonIndex], false, false, true);
+                }
                 changeButtonState(highlightedButtonIndex, ButtonState.ENABLED);
             }
             highlightedButtonIndex = -1;
@@ -155,7 +157,12 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
 
         outState.putCharSequenceArray("labels", labels);
         outState.putBooleanArray("enabled", enabled);
-        //TODO: Put buttonPairs
+
+        long[] pairIds = new long[buttonPairs.length];
+        for (int i=0; i<pairIds.length; i++) {
+            pairIds[i] = buttonPairs[i].id;
+        }
+        outState.putLongArray("buttonPairIds", pairIds);
     }
 
     @Override
@@ -167,6 +174,15 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
             return ;
         }
 
+        long[] pairIds = savedInstanceState.getLongArray("buttonPairIds");
+        for (int i=0; i<pairIds.length; i++) {
+            buttonPairs[i] = app.pairsById.get(pairIds[i]);
+            if (buttonPairs[i] == null) { // The user removed one of the displayed pairs (from the word list) and switched back to the exercise tab
+                newRound();
+                return ;
+            }
+        }
+
         CharSequence[] labels = savedInstanceState.getCharSequenceArray("labels");
         boolean[] enabled = savedInstanceState.getBooleanArray("enabled");
 
@@ -175,8 +191,6 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
             b.setEnabled(enabled[i]);
             wordTable.addView(b);
         }
-
-        //TODO: Get buttonPairs
     }
 
     @Override

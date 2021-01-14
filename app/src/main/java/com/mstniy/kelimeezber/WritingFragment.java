@@ -133,8 +133,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
                 backspace.setVisibility(View.VISIBLE);
             }
             else {
-                userInput.requestFocus();
-                SoftKeyboardHelper.showSoftKeyboard(getActivity());
+                maybeShowKeyboard();
                 backspace.setVisibility(View.INVISIBLE);
             }
             if (foreignSpeechAvailable)
@@ -168,7 +167,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     }
 
     void EditTextChanged() {
-        if (suppressEditTextChangedCallback)
+        if (suppressEditTextChangedCallback || isResumed() == false)
             return ;
         if (isAdded() == false)
             return ;
@@ -214,9 +213,6 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
 
         outState.putBoolean("letterTableAvailable", letterTableAvailable);
 
-        if (letterTableAvailable == false)
-            SoftKeyboardHelper.showSoftKeyboard(getActivity());
-
         outState.putBoolean("foreignSpeechAvailable", foreignSpeechAvailable);
 
         CharSequence[] letters = new CharSequence[letterTable.getChildCount()];
@@ -225,14 +221,35 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         outState.putCharSequenceArray("letters", letters);
 
         outState.putBoolean("isPass", isPass);
-        outState.putSerializable("currentPair", currentPair);
+        outState.putLong("currentPairId", currentPair.p.id);
+        outState.putBoolean("currentPairWasRandom", currentPair.wasRandom);
+    }
+
+    void maybeShowKeyboard() {
+        if (letterTableAvailable == false) {
+            userInput.requestFocus();
+            SoftKeyboardHelper.showSoftKeyboard(getActivity());
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        maybeShowKeyboard();
     }
 
     @Override
     public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
 
-        if (savedInstanceState == null || app.wlist.contains(currentPair.p) == false) { // The user removed the current pair (from the word list) and switched back to the exercise tab
+        if (savedInstanceState == null) {
+            newRound();
+            return ;
+        }
+
+        Long currentPairId = savedInstanceState.getLong("currentPairId");
+        currentPair = new PairSelectResult(app.pairsById.get(currentPairId), savedInstanceState.getBoolean("currentPairWasRandom"));
+        if (currentPair.p == null) { // The user removed the current pair (from the word list) and switched back to the exercise tab
             newRound();
             return ;
         }
@@ -254,7 +271,6 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         CharSequence[] letters = savedInstanceState.getCharSequenceArray("letters");
         for (int i=0; i<letters.length; i++)
             letterTable.addView(CreateButton(letters[i].toString()));
-        currentPair = (PairSelectResult)savedInstanceState.getSerializable("currentPair"); // TODO: This duplicates Pair
     }
 
     @Override

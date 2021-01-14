@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -72,11 +73,22 @@ public class ExerciseFragment extends Fragment {
 
         if (savedInstanceState != null) {
             selectionMethod = (SelectionMethod) savedInstanceState.getSerializable("selectionMethod");
+            // Android automatically restores the states of sub-fragments
         }
-
-        StartRound();
+        else
+            StartRound();
 
         return rootView;
+    }
+
+    Fragment instantiateSubFragment(ExerciseType et) {
+        if (et == ExerciseType.Writing)
+            return Fragment.instantiate(getContext(), WritingFragment.class.getName());
+        else if (et == ExerciseType.MC)
+            return Fragment.instantiate(getContext(), MCFragment.class.getName());
+        else if (et == ExerciseType.Matching)
+            return Fragment.instantiate(getContext(), MatchingFragment.class.getName());
+        return null;
     }
 
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -147,24 +159,15 @@ public class ExerciseFragment extends Fragment {
     }
 
     void ChangeExercise(ExerciseType et, SavedState savedSubFragmentState) {
-        Fragment currentFragment = getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame);
-        if (currentFragment == null // If the new exercise is of a different type to the one currently shown on the screen, or there is no exercise currently shown on the screen
-                || currentFragment.isAdded() == false // findFragmentById doesn't return null after rotations, even though the old fragment has already detached.
-                || et != getTypeOfExerciseFragment(currentFragment)) {
-            Fragment newFragment = null;
-            if (et == ExerciseType.Writing)
-                newFragment = Fragment.instantiate(getContext(), WritingFragment.class.getName());
-            else if (et == ExerciseType.MC)
-                newFragment = Fragment.instantiate(getContext(), MCFragment.class.getName());
-            else if (et == ExerciseType.Matching)
-                newFragment = Fragment.instantiate(getContext(), MatchingFragment.class.getName());
-            newFragment.setInitialSavedState(savedSubFragmentState);
-            getChildFragmentManager().beginTransaction().replace(R.id.exercise_fragment_frame, newFragment).commit();
+        Fragment subFragment = getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame);
+        if (subFragment == null // If the new exercise is of a different type to the one currently shown on the screen, or there is no exercise currently shown on the screen
+                || subFragment.isAdded() == false // findFragmentById doesn't return null after rotations, even though the old fragment has already detached.
+                || et != getTypeOfExerciseFragment(subFragment)) {
+            subFragment = instantiateSubFragment(et);
+            subFragment.setInitialSavedState(savedSubFragmentState);
+            getChildFragmentManager().beginTransaction().replace(R.id.exercise_fragment_frame, subFragment).commit();
             getChildFragmentManager().executePendingTransactions();
-            return;
         }
-
-        ((ExerciseFragmentInterface)currentFragment).newRound();
     }
 
     private void muteButtonPressed() {
@@ -188,6 +191,10 @@ public class ExerciseFragment extends Fragment {
         }
     }
 
+    ExerciseFragmentInterface getCurrentExercise() {
+        return (ExerciseFragmentInterface) getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame);
+    }
+
     void StartRound() {
         MaybeRecordEstimate();
 
@@ -201,6 +208,7 @@ public class ExerciseFragment extends Fragment {
             newExerciseType = ExerciseType.Writing;
 
         ChangeExercise(newExerciseType);
+        getCurrentExercise().newRound();
     }
 
     void FinishRound() {
@@ -216,14 +224,5 @@ public class ExerciseFragment extends Fragment {
         super.onSaveInstanceState(outState);
 
         outState.putSerializable("selectionMethod", selectionMethod);
-    }
-
-    @Override
-    public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
-        super.onViewStateRestored(savedInstanceState);
-        /*if (savedInstanceState == null) {
-            StartRound(true);
-            return ;
-        }*/
     }
 }

@@ -54,6 +54,7 @@ public class MyApplication extends Application implements OnInitListener {
     boolean isMuted = true;
     boolean ttsSupported = false;
     HashSet<Pair> wlist;
+    HashMap<Long, Pair> pairsById;
     HashMap<String, HashSet<String>> wordTranslationsBwd;
     HashMap<String, HashSet<String>> wordTranslationsFwd;
     ArrayList<StampedEstimate> estimates;
@@ -183,6 +184,8 @@ public class MyApplication extends Application implements OnInitListener {
 
     private void AddPairToAppState(Pair p) {
         wlist.add(p);
+        assert(p.id != 0);
+        pairsById.put(p.id, p);
         if (!wordTranslationsFwd.containsKey(p.first))
             wordTranslationsFwd.put(p.first, new HashSet());
         if (!wordTranslationsBwd.containsKey(p.second))
@@ -192,8 +195,8 @@ public class MyApplication extends Application implements OnInitListener {
     }
 
     void AddPair(Pair p) {
-        AddPairToAppState(p);
-        helper.insertPair(p);
+        helper.insertPair(p); // Note that this sets p.id
+        AddPairToAppState(p); // And this uses it
     }
 
     void UpdatePair(Pair p) {
@@ -202,6 +205,7 @@ public class MyApplication extends Application implements OnInitListener {
 
     void RemovePair(Pair p) {
         wlist.remove(p);
+        pairsById.remove(p.id);
         (wordTranslationsFwd.get(p.first)).remove(p.second);
         if (wordTranslationsFwd.get(p.first).isEmpty()) {
             wordTranslationsFwd.remove(p.first);
@@ -214,6 +218,7 @@ public class MyApplication extends Application implements OnInitListener {
 
     boolean SyncStateWithDB() {
         wlist = new HashSet<>();
+        pairsById = new HashMap<>();
         wordTranslationsFwd = new HashMap<>();
         wordTranslationsBwd = new HashMap<>();
         Pair[] pairs = helper.getPairs();

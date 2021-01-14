@@ -133,14 +133,22 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         outState.putBooleanArray("buttonsHighlighted", buttonsHighlighted);
         outState.putCharSequence("label", label.getText());
         outState.putBoolean("isPass", isPass);
-        outState.putSerializable("currentPair", currentPair);
+        outState.putLong("currentPairId", currentPair.p.id);
+        outState.putBoolean("currentPairWasRandom", currentPair.wasRandom);
     }
 
     @Override
     public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
 
-        if (savedInstanceState == null || app.wlist.contains(currentPair.p) == false) { // The user removed the current pair (from the word list) and switched back to the exercise tab
+        if (savedInstanceState == null) {
+            newRound();
+            return ;
+        }
+
+        Long currentPairId = savedInstanceState.getLong("currentPairId");
+        currentPair = new PairSelectResult(app.pairsById.get(currentPairId), savedInstanceState.getBoolean("currentPairWasRandom"));
+        if (currentPair.p == null) { // The user removed the current pair (from the word list) and switched back to the exercise tab
             newRound();
             return ;
         }
@@ -159,7 +167,6 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
 
         label.setText(savedInstanceState.getCharSequence("label"));
         isPass = savedInstanceState.getBoolean("isPass");
-        currentPair = (PairSelectResult) savedInstanceState.getSerializable("currentPair"); // TODO: This duplicates Pair
     }
 
     @Override
