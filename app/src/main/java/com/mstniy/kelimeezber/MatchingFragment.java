@@ -122,6 +122,12 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        SoftKeyboardHelper.hideSoftKeyboard(getActivity());
+    }
+
+    @Override
     public void newRound() {
         if (created) {
             wordTable.removeAllViews();
