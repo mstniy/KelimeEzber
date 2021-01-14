@@ -194,8 +194,8 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
 
         for (int i=0; i<labels.length; i++) {
             Button b = CreateButton(labels[i].toString(), i);
-            b.setEnabled(enabled[i]);
             wordTable.addView(b);
+            changeButtonState(i, enabled[i]?ButtonState.ENABLED:ButtonState.DISABLED);
         }
     }
 
