@@ -145,7 +145,16 @@ public class ExerciseFragment extends Fragment {
     }
 
     void ChangeExercise(ExerciseType et) {
-        ChangeExercise(et, null);
+        Fragment subFragment = getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame);
+        if (subFragment == null // If the new exercise is of a different type to the one currently shown on the screen, or there is no exercise currently shown on the screen
+                || subFragment.isAdded() == false // findFragmentById doesn't return null after rotations, even though the old fragment has already detached.
+                || et != getTypeOfExerciseFragment(subFragment)) {
+            subFragment = instantiateSubFragment(et);
+            getChildFragmentManager().beginTransaction().replace(R.id.exercise_fragment_frame, subFragment).commit();
+            getChildFragmentManager().executePendingTransactions();
+        }
+        else
+            ((ExerciseFragmentInterface)subFragment).newRound();
     }
 
     ExerciseType getTypeOfExerciseFragment(Fragment f) {
@@ -156,18 +165,6 @@ public class ExerciseFragment extends Fragment {
         if (f instanceof MatchingFragment)
             return ExerciseType.Matching;
         return null;
-    }
-
-    void ChangeExercise(ExerciseType et, SavedState savedSubFragmentState) {
-        Fragment subFragment = getChildFragmentManager().findFragmentById(R.id.exercise_fragment_frame);
-        if (subFragment == null // If the new exercise is of a different type to the one currently shown on the screen, or there is no exercise currently shown on the screen
-                || subFragment.isAdded() == false // findFragmentById doesn't return null after rotations, even though the old fragment has already detached.
-                || et != getTypeOfExerciseFragment(subFragment)) {
-            subFragment = instantiateSubFragment(et);
-            subFragment.setInitialSavedState(savedSubFragmentState);
-            getChildFragmentManager().beginTransaction().replace(R.id.exercise_fragment_frame, subFragment).commit();
-            getChildFragmentManager().executePendingTransactions();
-        }
     }
 
     private void muteButtonPressed() {
@@ -208,7 +205,6 @@ public class ExerciseFragment extends Fragment {
             newExerciseType = ExerciseType.Writing;
 
         ChangeExercise(newExerciseType);
-        getCurrentExercise().newRound();
     }
 
     void FinishRound() {
