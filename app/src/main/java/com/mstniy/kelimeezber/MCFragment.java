@@ -30,6 +30,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
     boolean foreignTextShown; // Valid only if currentFwd == true and the app is not muted
     boolean isPass;
     PairSelectResult currentPair;
+    Pair[] buttonPairs = new Pair[4];
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         app = (MyApplication) getContext().getApplicationContext();
@@ -41,9 +42,10 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         buttons[2] = rootView.findViewById(R.id.button2);
         buttons[3] = rootView.findViewById(R.id.button3);
         for (int i = 0; i < 4; i++) {
+            final int ii = i;
             buttons[i].setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    buttonClicked((Button) v);
+                    buttonClicked(ii);
                 }
             });
         }
@@ -78,8 +80,6 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
             for (int i = 0; i < 4; i++)
                 ChangeColorOfButton(i, false);
             label.setText("");
-            for (int i2 = 0; i2 < 4; i2++)
-                buttons[i2].setText("");
             currentPair = PairChooser.ChoosePair(app, exerciseFragment.selectionMethod);
             currentFwd = new Random().nextDouble() <= FWD_PROBABILITY;
             if (app.isMuted == false && app.ttsSupported)
@@ -89,10 +89,13 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
             int answer = new Random().nextInt(4);
             maybeSetLabel();
             for (int i3 = 0; i3 < 4; i3++) {
-                if (i3 == answer)
+                if (i3 == answer) {
                     buttons[i3].setText(currentFwd ? currentPair.p.second : currentPair.p.first);
+                    buttonPairs[i3] = currentPair.p;
+                }
                 else {
                     Pair p2 = PairChooser.ChoosePairRandom(app).p;
+                    buttonPairs[i3] = p2;
                     buttons[i3].setText(currentFwd ? p2.second : p2.first);
                 }
             }
@@ -110,11 +113,17 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         buttonsHighlighted[buttonIndex] = highlight;
     }
 
-    private void buttonClicked(Button button) {
+    private void buttonClicked(int buttonIndex) {
+        Button button = buttons[buttonIndex];
         if (app.isACorrectAnswer(currentPair.p, button.getText().toString(), currentFwd)) {
-            PeriodHelper.recordRoundOutcome(app, currentPair.p, isPass, exerciseFragment.selectionMethod == SelectionMethod.SMART, currentPair.wasRandom);
+            if (isPass)
+                PeriodHelper.recordRoundOutcome(app, currentPair.p, true, exerciseFragment.selectionMethod == SelectionMethod.SMART, currentPair.wasRandom);
             exerciseFragment.FinishRound();
         } else {
+            if (isPass) {
+                PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], false, false, true);
+                PeriodHelper.recordRoundOutcome(app, currentPair.p, false, exerciseFragment.selectionMethod == SelectionMethod.SMART, currentPair.wasRandom);
+            }
             isPass = false;
             setLabel();
             for (int i = 0; i < 4; i++)
@@ -140,6 +149,11 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         outState.putBoolean("isPass", isPass);
         outState.putLong("currentPairId", currentPair.p.id);
         outState.putBoolean("currentPairWasRandom", currentPair.wasRandom);
+
+        long[] buttonPairIds = new long[4];
+        for (int i=0; i<4; i++)
+            buttonPairIds[i] = buttonPairs[i].id;
+        outState.putLongArray("buttonPairIds", buttonPairIds);
     }
 
     @Override
@@ -172,6 +186,10 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
 
         label.setText(savedInstanceState.getCharSequence("label"));
         isPass = savedInstanceState.getBoolean("isPass");
+
+        long[] buttonPairIds = savedInstanceState.getLongArray("buttonPairIds");
+        for (int i=0; i<4; i++)
+            buttonPairs[i] = app.pairsById.get(buttonPairIds[i]);
     }
 
     @Override

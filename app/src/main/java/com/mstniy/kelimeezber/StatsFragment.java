@@ -138,7 +138,7 @@ public class StatsFragment extends Fragment {
             lineChart.getAxisRight().setEnabled(false);
             lineChart.getAxisLeft().setGranularity(1);
             float xScale = (timeMax-timeMin)/(timeMax-plotStartTime);
-            float yScale = (estimateMax-estimateMin)/(recentEstimateMax-recentEstimateMin)/2;
+            float yScale = (recentEstimateMax == recentEstimateMin) ? 1 : (estimateMax-estimateMin)/(recentEstimateMax-recentEstimateMin)/2;
             lineChart.zoomAndCenterAnimated(xScale, yScale, (plotStartTime+timeMax)/2, (recentEstimateMin+recentEstimateMax)/2, YAxis.AxisDependency.LEFT, 250);
         }
     }
