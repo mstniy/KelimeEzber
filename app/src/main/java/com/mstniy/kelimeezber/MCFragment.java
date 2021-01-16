@@ -49,8 +49,13 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         }
         exerciseFragment = (ExerciseFragment)getParentFragment();
         created = true;
-        SoftKeyboardHelper.hideSoftKeyboard(getActivity());
         return rootView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        SoftKeyboardHelper.hideSoftKeyboard(getActivity());
     }
 
     void maybeSetLabel() {

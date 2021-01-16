@@ -120,7 +120,7 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
             if (buttonPairs[buttonIndex] == buttonPairs[highlightedButtonIndex]) {
                 changeButtonState(buttonIndex, ButtonState.DISABLED);
                 changeButtonState(highlightedButtonIndex, ButtonState.DISABLED);
-                if (getEnabledButtonCount() > 2) {
+                if (getEnabledButtonCount() > 0) {
                     PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], true, false, true);
                     if (buttonPairs[buttonIndex].first.equals(((Button)wordTable.getChildAt(buttonIndex)).getText()))
                         app.speak(buttonPairs[buttonIndex].first);
