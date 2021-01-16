@@ -85,6 +85,15 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
             button.setBackgroundTintList(ContextCompat.getColorStateList(getContext(), R.color.ButtonBlueDisabled));
     }
 
+    int getEnabledButtonCount() {
+        int res=0;
+        for (int i=0; i<wordTable.getChildCount(); i++) {
+            if (wordTable.getChildAt(i).isEnabled())
+                res++;
+        }
+        return res;
+    }
+
     void maybeFinished() {
         for (int i=0; i<wordTable.getChildCount(); i++) {
             if (wordTable.getChildAt(i).isEnabled())
@@ -95,19 +104,27 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
     }
 
     void ButtonClicked(int buttonIndex) {
+        if (highlightedButtonIndex == buttonIndex) {
+            highlightedButtonIndex = -1;
+            changeButtonState(buttonIndex, ButtonState.ENABLED);
+            return ;
+        }
+
         if (highlightedButtonIndex == -1) {
             highlightedButtonIndex = buttonIndex;
             changeButtonState(buttonIndex, ButtonState.HIGHLIGHTED);
-        }
-        else if (highlightedButtonIndex == buttonIndex) {
-            highlightedButtonIndex = -1;
-            changeButtonState(buttonIndex, ButtonState.ENABLED);
+            if (buttonPairs[buttonIndex].first.equals(((Button)wordTable.getChildAt(buttonIndex)).getText()))
+                app.speak(buttonPairs[buttonIndex].first);
         }
         else {
             if (buttonPairs[buttonIndex] == buttonPairs[highlightedButtonIndex]) {
                 changeButtonState(buttonIndex, ButtonState.DISABLED);
                 changeButtonState(highlightedButtonIndex, ButtonState.DISABLED);
-                PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], true, false, true);
+                if (getEnabledButtonCount() > 2) {
+                    PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], true, false, true);
+                    if (buttonPairs[buttonIndex].first.equals(((Button)wordTable.getChildAt(buttonIndex)).getText()))
+                        app.speak(buttonPairs[buttonIndex].first);
+                }
                 maybeFinished();
             }
             else {
