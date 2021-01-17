@@ -49,7 +49,7 @@ public class MyApplication extends Application implements OnInitListener {
     ListeningFragment listeningFragment;
     DrawerActivity drawerActivity;
     DatabaseHelper helper = null;
-    MutableLiveData<Boolean> sortByPeriod = new MutableLiveData<>();
+    MutableLiveData<Integer> sortBy = new MutableLiveData<>();
     TextToSpeech tts;
     boolean isMuted = true;
     boolean ttsSupported = false;
@@ -112,7 +112,7 @@ public class MyApplication extends Application implements OnInitListener {
 
     public void onCreate() {
         super.onCreate();
-        sortByPeriod.setValue(Boolean.valueOf(true));
+        sortBy.setValue(2);
         preferences = getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE);
         dbs = discoverDBs();
         LanguageDB ldb = new LanguageDB();

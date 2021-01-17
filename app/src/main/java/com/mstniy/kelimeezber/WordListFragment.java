@@ -59,8 +59,8 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
         app = _app;
         filterPattern = Pattern.compile("");
         setDataset(myDataset);
-        app.sortByPeriod.observe(lifecycleOwner, new Observer<Boolean>() {
-            public void onChanged(@Nullable Boolean sortByPeriod) {
+        app.sortBy.observe(lifecycleOwner, new Observer<Integer>() {
+            public void onChanged(@Nullable Integer sortBy) {
                 sortMDataset();
                 notifyDataSetChanged();
             }
@@ -68,13 +68,14 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
     }
 
     private void sortMDataset() {
-        if (!(app.sortByPeriod.getValue()).booleanValue()) {
+        int sortBy = app.sortBy.getValue();
+        if (sortBy == 0) {
             Collections.sort(mDataset, new Comparator<Pair>() {
                 public int compare(Pair l, Pair r) {
                     return SwedishLexicographicalComparator.compare(l.first, r.first);
                 }
             });
-        } else {
+        } else if (sortBy == 1){
             Collections.sort(mDataset, new Comparator<Pair>() {
                 public int compare(Pair l, Pair r) {
                     if (l.period == 0 && r.period > 0) {
@@ -90,6 +91,17 @@ class RecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
                         return -1;
                     }
                     return 0;
+                }
+            });
+        }
+        else if (sortBy == 2) {
+            Collections.sort(mDataset, new Comparator<Pair>() {
+                public int compare(Pair l, Pair r) {
+                    if (r.id < l.id)
+                        return -1;
+                    if (r.id == l.id)
+                        return 0;
+                    return 1;
                 }
             });
         }

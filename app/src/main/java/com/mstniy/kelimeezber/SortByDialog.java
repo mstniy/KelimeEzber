@@ -13,12 +13,8 @@ public class SortByDialog extends DialogFragment {
         Builder builder = new Builder(getActivity());
         builder.setTitle((int) R.string.sortby_title).setItems(R.array.sortByArray, new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                MutableLiveData<Boolean> mutableLiveData = ((MyApplication) getContext().getApplicationContext()).sortByPeriod;
-                boolean z = true;
-                if (which != 1) {
-                    z = false;
-                }
-                mutableLiveData.setValue(Boolean.valueOf(z));
+                MutableLiveData<Integer> mutableLiveData = ((MyApplication) getContext().getApplicationContext()).sortBy;
+                mutableLiveData.setValue(which);
             }
         });
         return builder.create();

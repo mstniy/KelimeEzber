@@ -8,5 +8,6 @@
     <array name="sortByArray">
         <item>Lexicographical</item>
         <item>Period</item>
+        <item>Recent</item>
     </array>
 </resources>
