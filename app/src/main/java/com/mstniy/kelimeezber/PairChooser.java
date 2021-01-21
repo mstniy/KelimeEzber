@@ -13,11 +13,11 @@ enum SelectionMethod {
 
 class PairSelectResult implements Serializable {
     Pair p;
-    boolean wasRandom;
+    SelectionMethod method;
 
-    PairSelectResult(Pair p_, boolean wasRandom_) {
+    PairSelectResult(Pair p_, SelectionMethod method_) {
         p = p_;
-        wasRandom = wasRandom_;
+        method = method_;
     }
 }
 
@@ -25,6 +25,16 @@ public class PairChooser {
     static private final String TAG = PairChooser.class.getName();
 
     static PairSelectResult ChoosePairSmart(MyApplication app) {
+        final double RANDOM_PROB = 0.05;
+        final double NEW_PROB = 0.1;
+
+        double rnd = new Random().nextDouble();
+        if (rnd < RANDOM_PROB)
+            return ChoosePairRandom(app);
+        if (rnd < RANDOM_PROB + NEW_PROB)
+            return ChoosePairNew(app);
+        // Otherwise, select one of the scheduled pairs
+
         ArrayList<Pair> candidates = new ArrayList<>();
         int smallestNext = -1;
         for (Pair p : app.wlist) {
@@ -43,30 +53,44 @@ public class PairChooser {
         }
         else {
             Pair p = candidates.get(new Random().nextInt(candidates.size()));
-            return new PairSelectResult(p, false);
+            return new PairSelectResult(p, SelectionMethod.SMART);
         }
     }
     static PairSelectResult ChoosePairRandom(MyApplication app) {
         Pair p = (app.wlist.toArray(new Pair[app.wlist.size()]))[new Random().nextInt(app.wlist.size())];
-        return new PairSelectResult(p, true);
+        return new PairSelectResult(p, SelectionMethod.RANDOM);
     }
 
     static PairSelectResult ChoosePairNew(MyApplication app) {
-        Pair best = app.wlist.iterator().next();
+        ArrayList<Pair> arr = new ArrayList<>(app.wlist);
 
-        for (Pair p: app.wlist) {
-            if ((best.period == 0 && p.period > 0) || (p.period > 0 && best.period > 0 && p.period < best.period)) { // Note that 0 corresponds to infinity in the context of periods
-                best = p;
+        Collections.sort(arr, new Comparator<Pair>() {
+            int getComparisonPeriod(int period) {
+                if (period == 0)
+                    return Integer.MAX_VALUE;
+                if (period <= MyApplication.WordDropPeriod)
+                    return 1;
+                else
+                    return period;
             }
-            else if (p.period == best.period) {
-                if (p.id > best.id)
-                    best = p;
-            }
-        }
+            @Override
+            public int compare(Pair o1, Pair o2) {
+                int p1 = getComparisonPeriod(o1.period);
+                int p2 = getComparisonPeriod(o2.period);
+                if (p1 != p2)
+                    return p1-p2;
 
-        return new PairSelectResult(best, false);
+                if (o1.id != o2.id)
+                    return (o1.id < o2.id)?1:-1;
+
+                return 0;
+            }
+        });
+
+        return new PairSelectResult(arr.get(new Random().nextInt(Math.min(25, arr.size()))), SelectionMethod.NEW);
     }
 
+    // Note that *return.method* might not equal *method*
     static PairSelectResult ChoosePair(MyApplication app, SelectionMethod method) {
         if (method == SelectionMethod.NEW)
             return ChoosePairNew(app);

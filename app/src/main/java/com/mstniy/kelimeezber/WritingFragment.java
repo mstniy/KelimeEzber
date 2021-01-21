@@ -174,7 +174,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         if ((letterTableAvailable && userInput.getText().toString().compareTo(currentPair.p.first) == 0) ||
                 (letterTableAvailable == false && app.isACorrectAnswer(currentPair.p, userInput.getText().toString(), false))) {
             userInput.setText("");
-            PeriodHelper.recordRoundOutcome(app, currentPair.p, isPass, exerciseFragment.selectionMethod == SelectionMethod.SMART, currentPair.wasRandom);
+            PeriodHelper.recordRoundOutcome(app, currentPair, isPass);
             exerciseFragment.FinishRound();
         }
     }
@@ -222,7 +222,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
 
         outState.putBoolean("isPass", isPass);
         outState.putLong("currentPairId", currentPair.p.id);
-        outState.putBoolean("currentPairWasRandom", currentPair.wasRandom);
+        outState.putSerializable("currentPairSelectionMethod", currentPair.method);
     }
 
     void maybeShowKeyboard() {
@@ -248,7 +248,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         }
 
         Long currentPairId = savedInstanceState.getLong("currentPairId");
-        currentPair = new PairSelectResult(app.pairsById.get(currentPairId), savedInstanceState.getBoolean("currentPairWasRandom"));
+        currentPair = new PairSelectResult(app.pairsById.get(currentPairId), (SelectionMethod) savedInstanceState.getSerializable("currentPairSelectionMethod"));
         if (currentPair.p == null) { // The user removed the current pair (from the word list) and switched back to the exercise tab
             newRound();
             return ;

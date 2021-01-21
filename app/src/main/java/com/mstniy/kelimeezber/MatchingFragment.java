@@ -121,7 +121,7 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
                 changeButtonState(buttonIndex, ButtonState.DISABLED);
                 changeButtonState(highlightedButtonIndex, ButtonState.DISABLED);
                 if (getEnabledButtonCount() > 0) {
-                    PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], true, false, true);
+                    PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), true);
                     if (buttonPairs[buttonIndex].first.equals(((Button)wordTable.getChildAt(buttonIndex)).getText()))
                         app.speak(buttonPairs[buttonIndex].first);
                 }
@@ -129,8 +129,8 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
             }
             else {
                 for (int i=0; i<2; i++) { // We record two bad outcomes because each pair will eventually get a positive outcome (for the round to end)
-                    PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], false, false, true);
-                    PeriodHelper.recordRoundOutcome(app, buttonPairs[highlightedButtonIndex], false, false, true);
+                    PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), false);
+                    PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[highlightedButtonIndex], SelectionMethod.RANDOM), false);
                 }
                 changeButtonState(highlightedButtonIndex, ButtonState.ENABLED);
             }

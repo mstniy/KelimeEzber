@@ -117,12 +117,12 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         Button button = buttons[buttonIndex];
         if (app.isACorrectAnswer(currentPair.p, button.getText().toString(), currentFwd)) {
             if (isPass)
-                PeriodHelper.recordRoundOutcome(app, currentPair.p, true, exerciseFragment.selectionMethod == SelectionMethod.SMART, currentPair.wasRandom);
+                PeriodHelper.recordRoundOutcome(app, currentPair, true);
             exerciseFragment.FinishRound();
         } else {
             if (isPass) {
-                PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], false, false, true);
-                PeriodHelper.recordRoundOutcome(app, currentPair.p, false, exerciseFragment.selectionMethod == SelectionMethod.SMART, currentPair.wasRandom);
+                PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), false);
+                PeriodHelper.recordRoundOutcome(app, currentPair, false);
             }
             isPass = false;
             setLabel();
@@ -148,7 +148,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         outState.putCharSequence("label", label.getText());
         outState.putBoolean("isPass", isPass);
         outState.putLong("currentPairId", currentPair.p.id);
-        outState.putBoolean("currentPairWasRandom", currentPair.wasRandom);
+        outState.putSerializable("currentPairSelectionMethod", currentPair.method);
 
         long[] buttonPairIds = new long[4];
         for (int i=0; i<4; i++)
@@ -166,7 +166,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         }
 
         Long currentPairId = savedInstanceState.getLong("currentPairId");
-        currentPair = new PairSelectResult(app.pairsById.get(currentPairId), savedInstanceState.getBoolean("currentPairWasRandom"));
+        currentPair = new PairSelectResult(app.pairsById.get(currentPairId), (SelectionMethod) savedInstanceState.getSerializable("currentPairSelectionMethod"));
         if (currentPair.p == null) { // The user removed the current pair (from the word list) and switched back to the exercise tab
             newRound();
             return ;
