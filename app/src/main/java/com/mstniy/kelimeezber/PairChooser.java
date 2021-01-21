@@ -2,6 +2,8 @@ package com.mstniy.kelimeezber;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Random;
 
@@ -50,22 +52,19 @@ public class PairChooser {
     }
 
     static PairSelectResult ChoosePairNew(MyApplication app) {
-        ArrayList<Pair> arr = new ArrayList<>();
-        Iterator it = app.wlist.iterator();
-        while (it.hasNext()) {
-            Pair p = (Pair) it.next();
-            if (p.period == 1) {
-                arr.add(p);
+        Pair best = app.wlist.iterator().next();
+
+        for (Pair p: app.wlist) {
+            if ((best.period == 0 && p.period > 0) || (p.period > 0 && best.period > 0 && p.period < best.period)) { // Note that 0 corresponds to infinity in the context of periods
+                best = p;
+            }
+            else if (p.period == best.period) {
+                if (p.id > best.id)
+                    best = p;
             }
         }
-        Pair p;
-        if (arr.isEmpty()) {
-            p = app.wlist.iterator().next();
-        }
-        else
-            p = arr.get(new Random().nextInt(arr.size()));
 
-        return new PairSelectResult(p, false);
+        return new PairSelectResult(best, false);
     }
 
     static PairSelectResult ChoosePair(MyApplication app, SelectionMethod method) {
