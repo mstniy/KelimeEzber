@@ -49,7 +49,8 @@ public class PairChooser {
                     candidates.add(p);
         }
         if (candidates.size() == 0) {
-            return ChoosePairRandom(app);
+            return new PairSelectResult(ChoosePairRandom(app).p, SelectionMethod.SMART); // We replace the selection method with SMART here, so that if the user loses the round, the pair get scheduled.
+                                                                                        // We won't end up scheduling too many pairs, because if we have entered this branch our schedule is probably not too tight.
         }
         else {
             Pair p = candidates.get(new Random().nextInt(candidates.size()));
