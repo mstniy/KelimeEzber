@@ -485,37 +485,37 @@ class DatabaseHelper {
         setEResultsIndex(eresults_index);
     }
 
-    public void addToConfusion(Pair pair1, Pair pair2) {
-        if (pair1.id == pair2.id) // One does not confuse a word with itself
+    public void increaseConfusion(Long pair1, Long pair2) {
+        if (pair1 == pair2) // One does not confuse a word with itself
             return ;
-        if (pair1.id > pair2.id) {
+        if (pair1 > pair2) {
             // Swap the pairs such that pair1 has the lower id
-            Pair tmp = pair1;
+            Long tmp = pair1;
             pair1 = pair2;
             pair2 = tmp; // I love Java
         }
-        Cursor cur_exists = db.rawQuery("SELECT counter FROM " + TABLE_CONFUSION + " WHERE pair1 = ? AND pair2 = ?", new String[]{String.valueOf(pair1.id), String.valueOf(pair2.id)});
+        Cursor cur_exists = db.rawQuery("SELECT counter FROM " + TABLE_CONFUSION + " WHERE pair1 = ? AND pair2 = ?", new String[]{String.valueOf(pair1), String.valueOf(pair2)});
         cur_exists.moveToFirst();
         if (cur_exists.getCount() == 0) { // This confusion is new, add it to the DB
-            Cursor cur1 = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_CONFUSION + " WHERE pair1 = ?", new String[]{String.valueOf(pair1.id)});
+            Cursor cur1 = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_CONFUSION + " WHERE pair1 = ?", new String[]{String.valueOf(pair1)});
             cur1.moveToFirst();
             int count_pair1 = cur1.getInt(0);
             cur1.close();
             if (count_pair1 > MAX_CONFUSION_PAIRS_PER_PAIR) { // If the confusion list for the first pair is full...
-                Cursor cur2 = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_CONFUSION + " WHERE pair2 = ?", new String[]{String.valueOf(pair2.id)});
+                Cursor cur2 = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_CONFUSION + " WHERE pair2 = ?", new String[]{String.valueOf(pair2)});
                 cur2.moveToFirst();
                 int count_pair2 = cur2.getInt(0);
                 cur2.close();
                 if (count_pair2 > MAX_CONFUSION_PAIRS_PER_PAIR) { // If the confusion list for the second pair is also full...
                     // Delete the confusion entry with the lowest counter from either pair1 or pair2
-                    Cursor cur_del = db.query(TABLE_CONFUSION, new String[]{COLUMN_PAIR1, COLUMN_PAIR2}, "pair1 = ? OR pair2 = ?", new String[]{String.valueOf(pair1.id), String.valueOf(pair2.id)}, null, null, "counter", "1");
+                    Cursor cur_del = db.query(TABLE_CONFUSION, new String[]{COLUMN_PAIR1, COLUMN_PAIR2}, "pair1 = ? OR pair2 = ?", new String[]{String.valueOf(pair1), String.valueOf(pair2)}, null, null, "counter", "1");
                     db.delete(TABLE_CONFUSION, "pair1 = ? AND pair2 = ?", new String[]{String.valueOf(cur_del.getInt(0)), String.valueOf(cur_del.getInt(1))});
                     cur_del.close();
                 }
             }
             ContentValues values = new ContentValues(); // Insert the new confusion
-            values.put(COLUMN_PAIR1, pair1.id);
-            values.put(COLUMN_PAIR2, pair2.id);
+            values.put(COLUMN_PAIR1, pair1);
+            values.put(COLUMN_PAIR2, pair2);
             values.put(COLUMN_COUNTER, 3);
             db.insert(TABLE_CONFUSION, null, values);
         }
@@ -523,11 +523,34 @@ class DatabaseHelper {
             int oldCounter = cur_exists.getInt(0);
             if (oldCounter < MAX_CONFUSION_COUNTER) {
                 ContentValues values = new ContentValues();
-                values.put(COLUMN_PAIR1, pair1.id);
-                values.put(COLUMN_PAIR2, pair2.id);
+                values.put(COLUMN_PAIR1, pair1);
+                values.put(COLUMN_PAIR2, pair2);
                 values.put(COLUMN_COUNTER, oldCounter + 1);
-                db.update(TABLE_CONFUSION, values, "pair1 = ? AND pair2 = ?", new String[]{String.valueOf(pair1.id), String.valueOf(pair2.id)});
+                db.update(TABLE_CONFUSION, values, "pair1 = ? AND pair2 = ?", new String[]{String.valueOf(pair1), String.valueOf(pair2)});
             }
+        }
+        cur_exists.close();
+    }
+
+    public void decreaseConfusion(Long pair1, Long pair2) {
+        if (pair1 > pair2) {
+            // Swap the pairs such that pair1 has the lower id
+            Long tmp = pair1;
+            pair1 = pair2;
+            pair2 = tmp; // I love Java
+        }
+        Cursor cur_exists = db.rawQuery("SELECT counter FROM " + TABLE_CONFUSION + " WHERE pair1 = ? AND pair2 = ?", new String[]{String.valueOf(pair1), String.valueOf(pair2)});
+        if (cur_exists.getCount() == 0)
+            return ;
+        cur_exists.moveToFirst();
+        int oldCounter = cur_exists.getInt(cur_exists.getColumnIndexOrThrow("counter"));
+        if (oldCounter <= 1) {
+            db.delete(TABLE_CONFUSION, "pair1 = ? AND pair2 = ?", new String[]{String.valueOf(pair1), String.valueOf(pair2)});
+        }
+        else {
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_COUNTER, oldCounter - 1);
+            db.update(TABLE_CONFUSION, values, "pair1 = ? AND pair2 = ?", new String[]{String.valueOf(pair1), String.valueOf(pair2)});
         }
         cur_exists.close();
     }

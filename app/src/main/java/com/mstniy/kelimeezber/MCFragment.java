@@ -118,11 +118,12 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         if (app.isACorrectAnswer(currentPair.p, button.getText().toString(), currentFwd)) {
             if (isPass)
                 PeriodHelper.recordRoundOutcome(app, currentPair, true);
+            // TODO: We need to decrease confusion perhaps, see MatchingFragment
             exerciseFragment.FinishRound();
         } else {
             if (isPass) {
                 PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), false);
-                app.helper.addToConfusion(currentPair.p, buttonPairs[buttonIndex]);
+                app.helper.increaseConfusion(currentPair.p.id, buttonPairs[buttonIndex].id);
                 PeriodHelper.recordRoundOutcome(app, currentPair, false);
             }
             isPass = false;

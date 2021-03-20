@@ -17,6 +17,9 @@ import com.google.android.flexbox.FlexboxLayout;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 enum ButtonState {
     ENABLED,
@@ -44,6 +47,7 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
     boolean created = false;
     FlexboxLayout wordTable;
     Pair[] buttonPairs = new Pair[2*PAIR_COUNT];
+    Set<Long> wrongAnswer = new HashSet<>();
     int highlightedButtonIndex = -1;
 
 
@@ -100,6 +104,16 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
                 return;
         }
 
+        Set<Long> correctPairs = new HashSet<>();
+        for (Pair p : buttonPairs)
+            if (wrongAnswer.contains(p.id) == false) // If a pair was involved in a mismatch, we completely exclude it from decreaseConfusion
+                correctPairs.add(p.id);
+
+        for (Long pair1 : correctPairs)
+            for (Long pair2 : correctPairs) // A complexity of O(NUM_PAIRS**2) if fine, considering we have only 4 pairs
+                if (pair2 > pair1)
+                        app.helper.decreaseConfusion(pair1, pair2); // Note that a confusion entry for won't be defined for many pairs of pairs, so this line won't do anything most of the time.
+
         exerciseFragment.FinishRound();
     }
 
@@ -121,18 +135,21 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
                 changeButtonState(buttonIndex, ButtonState.DISABLED);
                 changeButtonState(highlightedButtonIndex, ButtonState.DISABLED);
                 if (getEnabledButtonCount() > 0) {
-                    PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), true);
+                    if (wrongAnswer.contains(buttonPairs[buttonIndex].id) == false)
+                        PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), true);
                     if (buttonPairs[buttonIndex].first.equals(((Button)wordTable.getChildAt(buttonIndex)).getText()))
                         app.speak(buttonPairs[buttonIndex].first);
                 }
                 maybeFinished();
             }
             else { // Mismatch
-                for (int i=0; i<2; i++) { // We record two bad outcomes because each pair will eventually get a positive outcome (for the round to end)
+                if (wrongAnswer.contains(buttonPairs[buttonIndex].id) == false && wrongAnswer.contains(buttonPairs[highlightedButtonIndex].id) == false) {
                     PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), false);
                     PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[highlightedButtonIndex], SelectionMethod.RANDOM), false);
+                    app.helper.increaseConfusion(buttonPairs[buttonIndex].id, buttonPairs[highlightedButtonIndex].id);
                 }
-                app.helper.addToConfusion(buttonPairs[buttonIndex], buttonPairs[highlightedButtonIndex]);
+                wrongAnswer.add(buttonPairs[buttonIndex].id);
+                wrongAnswer.add(buttonPairs[highlightedButtonIndex].id);
                 changeButtonState(highlightedButtonIndex, ButtonState.ENABLED);
             }
             highlightedButtonIndex = -1;
@@ -163,6 +180,8 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
                 buttonPairs[i] = words.get(i).p;
                 wordTable.addView(b);
             }
+
+            wrongAnswer.clear();
         }
     }
 
