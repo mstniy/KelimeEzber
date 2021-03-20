@@ -127,11 +127,12 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
                 }
                 maybeFinished();
             }
-            else {
+            else { // Mismatch
                 for (int i=0; i<2; i++) { // We record two bad outcomes because each pair will eventually get a positive outcome (for the round to end)
                     PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), false);
                     PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[highlightedButtonIndex], SelectionMethod.RANDOM), false);
                 }
+                app.helper.addToConfusion(buttonPairs[buttonIndex], buttonPairs[highlightedButtonIndex]);
                 changeButtonState(highlightedButtonIndex, ButtonState.ENABLED);
             }
             highlightedButtonIndex = -1;

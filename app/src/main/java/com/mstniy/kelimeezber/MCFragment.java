@@ -122,6 +122,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         } else {
             if (isPass) {
                 PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), false);
+                app.helper.addToConfusion(currentPair.p, buttonPairs[buttonIndex]);
                 PeriodHelper.recordRoundOutcome(app, currentPair, false);
             }
             isPass = false;

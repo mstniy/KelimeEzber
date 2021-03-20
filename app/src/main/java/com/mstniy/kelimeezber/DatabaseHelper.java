@@ -1,14 +1,12 @@
 package com.mstniy.kelimeezber;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.List;
 
 class StampedEstimate implements Comparable<StampedEstimate>{
     public long timestamp;
@@ -31,7 +29,7 @@ class StampedEstimate implements Comparable<StampedEstimate>{
 
 class DatabaseHelper {
     private static final String TAG = DatabaseHelper.class.getName();
-    private static final int DB_VERSION = 5;
+    private static final int DB_VERSION = 6;
     private static final int ERESULTS_QUEUE_LENGTH = 75;
     private static final int MAX_ESTIMATE_COUNT = 365*10; // One estimate per day -> 10 years
 
@@ -63,6 +61,14 @@ class DatabaseHelper {
     private static final String TABLE_VARIABLES = "variables";
     private static final String TABLE_EXERCISE_RESULTS = "eresults";
     private static final String TABLE_ESTIMATES = "estimates";
+
+    private static final String TABLE_CONFUSION = "confusion";
+    private static final String CREATE_CONFUSION = "CREATE TABLE IF NOT EXISTS confusion(pair1 INTEGER REFERENCES kelimeler(id) ON DELETE CASCADE, pair2 INTEGER REFERENCES kelimeler(id) ON DELETE CASCADE, counter INTEGER, PRIMARY KEY(pair1, pair2)); CREATE INDEX confusion_pair1 ON confusion(pair1); CREATE INDEX confusion_pair2 ON confusion(pair2);";
+    private static final String COLUMN_PAIR1 = "pair1";
+    private static final String COLUMN_PAIR2 = "pair2";
+    private static final String COLUMN_COUNTER = "counter";
+    private static final int MAX_CONFUSION_PAIRS_PER_PAIR = 5;
+    private static final int MAX_CONFUSION_COUNTER = 5; // Confusion counter saturates at this value
 
     private SQLiteDatabase db;
     private String dbPath;
@@ -133,7 +139,11 @@ class DatabaseHelper {
             From4to5();
             version = 5;
         }
-        if (version == 5)
+        if (version == 5) {
+            From5to6();
+            version = 6;
+        }
+        if (version == 6)
             return ;
         else
             throw new RuntimeException("Unrecognized DB version.");
@@ -232,6 +242,20 @@ class DatabaseHelper {
             db.execSQL(CREATE_ESTIMATES);
 
             db.setVersion(5);
+            db.setTransactionSuccessful();
+        }
+        finally {
+            db.endTransaction();
+        }
+    }
+
+    private void From5to6() {
+        Log.d(TAG, "Upgrading the existing DB from version 5 to 6");
+        db.beginTransaction();
+        try {
+            db.execSQL(CREATE_CONFUSION);
+
+            db.setVersion(6);
             db.setTransactionSuccessful();
         }
         finally {
@@ -459,6 +483,53 @@ class DatabaseHelper {
             throw new RuntimeException("pushExerciseResult failed");
         eresults_index = (eresults_index+1)%eresults_length;
         setEResultsIndex(eresults_index);
+    }
+
+    public void addToConfusion(Pair pair1, Pair pair2) {
+        if (pair1.id == pair2.id) // One does not confuse a word with itself
+            return ;
+        if (pair1.id > pair2.id) {
+            // Swap the pairs such that pair1 has the lower id
+            Pair tmp = pair1;
+            pair1 = pair2;
+            pair2 = tmp; // I love Java
+        }
+        Cursor cur_exists = db.rawQuery("SELECT counter FROM " + TABLE_CONFUSION + " WHERE pair1 = ? AND pair2 = ?", new String[]{String.valueOf(pair1.id), String.valueOf(pair2.id)});
+        cur_exists.moveToFirst();
+        if (cur_exists.getCount() == 0) { // This confusion is new, add it to the DB
+            Cursor cur1 = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_CONFUSION + " WHERE pair1 = ?", new String[]{String.valueOf(pair1.id)});
+            cur1.moveToFirst();
+            int count_pair1 = cur1.getInt(0);
+            cur1.close();
+            if (count_pair1 > MAX_CONFUSION_PAIRS_PER_PAIR) { // If the confusion list for the first pair is full...
+                Cursor cur2 = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_CONFUSION + " WHERE pair2 = ?", new String[]{String.valueOf(pair2.id)});
+                cur2.moveToFirst();
+                int count_pair2 = cur2.getInt(0);
+                cur2.close();
+                if (count_pair2 > MAX_CONFUSION_PAIRS_PER_PAIR) { // If the confusion list for the second pair is also full...
+                    // Delete the confusion entry with the lowest counter from either pair1 or pair2
+                    Cursor cur_del = db.query(TABLE_CONFUSION, new String[]{COLUMN_PAIR1, COLUMN_PAIR2}, "pair1 = ? OR pair2 = ?", new String[]{String.valueOf(pair1.id), String.valueOf(pair2.id)}, null, null, "counter", "1");
+                    db.delete(TABLE_CONFUSION, "pair1 = ? AND pair2 = ?", new String[]{String.valueOf(cur_del.getInt(0)), String.valueOf(cur_del.getInt(1))});
+                    cur_del.close();
+                }
+            }
+            ContentValues values = new ContentValues(); // Insert the new confusion
+            values.put(COLUMN_PAIR1, pair1.id);
+            values.put(COLUMN_PAIR2, pair2.id);
+            values.put(COLUMN_COUNTER, 3);
+            db.insert(TABLE_CONFUSION, null, values);
+        }
+        else { // This confusion is not new. Increase its counter, if it is not saturated
+            int oldCounter = cur_exists.getInt(0);
+            if (oldCounter < MAX_CONFUSION_COUNTER) {
+                ContentValues values = new ContentValues();
+                values.put(COLUMN_PAIR1, pair1.id);
+                values.put(COLUMN_PAIR2, pair2.id);
+                values.put(COLUMN_COUNTER, oldCounter + 1);
+                db.update(TABLE_CONFUSION, values, "pair1 = ? AND pair2 = ?", new String[]{String.valueOf(pair1.id), String.valueOf(pair2.id)});
+            }
+        }
+        cur_exists.close();
     }
 
     public void close() {
