@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 enum SelectionMethod {
@@ -24,48 +25,72 @@ class PairSelectResult implements Serializable {
 public class PairChooser {
     static private final String TAG = PairChooser.class.getName();
 
-    static PairSelectResult ChoosePairSmart(MyApplication app) {
+    static ArrayList<PairSelectResult> ChoosePairSmart(MyApplication app, int numPairs) {
         final double RANDOM_PROB = 0.05;
         final double NEW_PROB = 0.1;
 
-        double rnd = new Random().nextDouble();
-        if (rnd < RANDOM_PROB)
-            return ChoosePairRandom(app);
-        if (rnd < RANDOM_PROB + NEW_PROB)
-            return ChoosePairNew(app);
-        // Otherwise, select one of the scheduled pairs
+        Comparator<Pair> pairComparator = new Comparator<Pair>() {
+            @Override
+            public int compare(Pair o1, Pair o2) {
+                if (o1.next == -1 && o2.next == -1)
+                    return 0;
+                if (o1.next == -1) // Magic value for "not scheduled"
+                    return 1;
+                if (o2.next == -1)
+                    return -1;
+                return o1.next - o2.next;
+            }
+        };
 
-        ArrayList<Pair> candidates = new ArrayList<>();
-        int smallestNext = -1;
-        for (Pair p : app.wlist) {
-            if (p.next == -1)
-                continue;
-            if (smallestNext == -1 || p.next < smallestNext)
-                smallestNext = p.next;
+        ArrayList<Pair> sortedByNext = new ArrayList<>(app.wlist);
+        Collections.sort(sortedByNext, pairComparator);
+
+        int index = Collections.binarySearch(sortedByNext, new Pair(0, null, null, 0, app.roundId+numPairs), pairComparator);
+        if (index < 0) {
+            index = -index-1;
         }
-        if (smallestNext != -1 && smallestNext <= app.roundId) {
-            for (Pair p : app.wlist)
-                if (p.next == smallestNext)
-                    candidates.add(p);
+        else
+            index++;
+
+        ArrayList<PairSelectResult> pairs = new ArrayList<>();
+        List<Pair> candidates = sortedByNext.subList(0, index); // A list of pairs scheduled at (or before) the range of rounds we're interested in
+        Collections.shuffle(candidates);
+        for (int pairs_index=0, candidates_index = 0; pairs_index < numPairs; pairs_index++) {
+            if (candidates_index == candidates.size()) { // If we have run out of scheduled pairs, fill in the rest using random pairs
+                pairs.add(new PairSelectResult(ChoosePairRandom(app, 1).get(0).p, SelectionMethod.SMART));
+                // We replace the selection method with SMART here, so that if the user loses the round, the pair get scheduled.
+                // We won't end up scheduling too many pairs, because if we have entered this branch our schedule is probably not too tight.
+            }
+            else {
+                double rnd = new Random().nextDouble();
+                if (rnd < RANDOM_PROB)
+                    pairs.add(ChoosePairRandom(app, 1).get(0));
+                else if (rnd < RANDOM_PROB + NEW_PROB)
+                    pairs.add(ChoosePairNew(app, 1).get(0));
+                else { // Otherwise, select one of the scheduled pairs
+                    pairs.add(new PairSelectResult(candidates.get(candidates_index), SelectionMethod.SMART));
+                    candidates_index++;
+                }
+            }
+            //TODO: Respect confusion entries, probabilistically of course.
         }
-        if (candidates.size() == 0) {
-            return new PairSelectResult(ChoosePairRandom(app).p, SelectionMethod.SMART); // We replace the selection method with SMART here, so that if the user loses the round, the pair get scheduled.
-                                                                                        // We won't end up scheduling too many pairs, because if we have entered this branch our schedule is probably not too tight.
-        }
-        else {
-            Pair p = candidates.get(new Random().nextInt(candidates.size()));
-            return new PairSelectResult(p, SelectionMethod.SMART);
-        }
+
+        return pairs;
     }
-    static PairSelectResult ChoosePairRandom(MyApplication app) {
-        Pair p = (app.wlist.toArray(new Pair[app.wlist.size()]))[new Random().nextInt(app.wlist.size())];
-        return new PairSelectResult(p, SelectionMethod.RANDOM);
+    static ArrayList<PairSelectResult> ChoosePairRandom(MyApplication app, int numPairs) {
+        ArrayList<PairSelectResult> pairs = new ArrayList<>();
+        Pair[] wlist = app.wlist.toArray(new Pair[app.wlist.size()]);
+        for (int i=0; i<numPairs; i++) {
+            Pair p = wlist[new Random().nextInt(app.wlist.size())];
+            pairs.add(new PairSelectResult(p, SelectionMethod.RANDOM));
+        }
+        return pairs;
     }
 
-    static PairSelectResult ChoosePairNew(MyApplication app) {
-        ArrayList<Pair> arr = new ArrayList<>(app.wlist);
+    static ArrayList<PairSelectResult> ChoosePairNew(MyApplication app, int numPairs) {
+        ArrayList<Pair> sortedByPeriod = new ArrayList<>(app.wlist);
 
-        Collections.sort(arr, new Comparator<Pair>() {
+        Collections.sort(sortedByPeriod, new Comparator<Pair>() {
             int getComparisonPeriod(int period) {
                 if (period == 0)
                     return Integer.MAX_VALUE;
@@ -88,17 +113,25 @@ public class PairChooser {
             }
         });
 
-        return new PairSelectResult(arr.get(new Random().nextInt(Math.min(25, arr.size()))), SelectionMethod.NEW);
+        List<Pair> first25 = sortedByPeriod.subList(0, Math.min(25, sortedByPeriod.size()));
+        Collections.shuffle(first25);
+
+        ArrayList<PairSelectResult> pairs = new ArrayList<>();
+        for (int i=0; i<numPairs; i++) {
+            pairs.add(new PairSelectResult(first25.get(i % sortedByPeriod.size()), SelectionMethod.NEW));
+        }
+
+        return pairs;
     }
 
     // Note that *return.method* might not equal *method*
-    static PairSelectResult ChoosePair(MyApplication app, SelectionMethod method) {
+    static ArrayList<PairSelectResult> ChoosePair(MyApplication app, SelectionMethod method, int numPairs) {
         if (method == SelectionMethod.NEW)
-            return ChoosePairNew(app);
+            return ChoosePairNew(app, numPairs);
         else if (method == SelectionMethod.RANDOM)
-            return ChoosePairRandom(app);
+            return ChoosePairRandom(app, numPairs);
         else if (method == SelectionMethod.SMART)
-            return ChoosePairSmart(app);
+            return ChoosePairSmart(app, numPairs);
         return null;
     }
 }

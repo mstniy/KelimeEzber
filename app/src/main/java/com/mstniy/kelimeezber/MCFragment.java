@@ -80,7 +80,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
             for (int i = 0; i < 4; i++)
                 ChangeColorOfButton(i, false);
             label.setText("");
-            currentPair = PairChooser.ChoosePair(app, exerciseFragment.selectionMethod);
+            currentPair = PairChooser.ChoosePair(app, exerciseFragment.selectionMethod, 1).get(0);
             currentFwd = new Random().nextDouble() <= FWD_PROBABILITY;
             if (app.isMuted == false && app.ttsSupported)
                 foreignTextShown = new Random().nextDouble() <= FOREIGN_TEXT_SHOWN_PROB;
@@ -94,7 +94,7 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
                     buttonPairs[i3] = currentPair.p;
                 }
                 else {
-                    Pair p2 = PairChooser.ChoosePairRandom(app).p;
+                    Pair p2 = PairChooser.ChoosePairRandom(app, 1).get(0).p;
                     buttonPairs[i3] = p2;
                     buttons[i3].setText(currentFwd ? p2.second : p2.first);
                 }

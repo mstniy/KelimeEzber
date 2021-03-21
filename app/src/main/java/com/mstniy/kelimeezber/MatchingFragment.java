@@ -17,7 +17,6 @@ import com.google.android.flexbox.FlexboxLayout;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,11 +26,11 @@ enum ButtonState {
     HIGHLIGHTED
 }
 
-class PairAndWord {
-    Pair p;
+class PSRAndWord {
+    PairSelectResult p;
     String word;
 
-    PairAndWord(Pair p_, String word_) {
+    PSRAndWord(PairSelectResult p_, String word_) {
         p=p_;
         word=word_;
     }
@@ -46,7 +45,7 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
     ExerciseFragment exerciseFragment;
     boolean created = false;
     FlexboxLayout wordTable;
-    Pair[] buttonPairs = new Pair[2*PAIR_COUNT];
+    PairSelectResult[] buttonPairs = new PairSelectResult[2*PAIR_COUNT];
     Set<Long> wrongAnswer = new HashSet<>();
     int highlightedButtonIndex = -1;
 
@@ -105,9 +104,9 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
         }
 
         Set<Long> correctPairs = new HashSet<>();
-        for (Pair p : buttonPairs)
-            if (wrongAnswer.contains(p.id) == false) // If a pair was involved in a mismatch, we completely exclude it from decreaseConfusion
-                correctPairs.add(p.id);
+        for (PairSelectResult p : buttonPairs)
+            if (wrongAnswer.contains(p.p.id) == false) // If a pair was involved in a mismatch, we completely exclude it from decreaseConfusion
+                correctPairs.add(p.p.id);
 
         for (Long pair1 : correctPairs)
             for (Long pair2 : correctPairs) // A complexity of O(NUM_PAIRS**2) if fine, considering we have only 4 pairs
@@ -127,29 +126,29 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
         if (highlightedButtonIndex == -1) {
             highlightedButtonIndex = buttonIndex;
             changeButtonState(buttonIndex, ButtonState.HIGHLIGHTED);
-            if (buttonPairs[buttonIndex].first.equals(((Button)wordTable.getChildAt(buttonIndex)).getText()))
-                app.speak(buttonPairs[buttonIndex].first);
+            if (buttonPairs[buttonIndex].p.first.equals(((Button)wordTable.getChildAt(buttonIndex)).getText()))
+                app.speak(buttonPairs[buttonIndex].p.first);
         }
         else {
-            if (buttonPairs[buttonIndex] == buttonPairs[highlightedButtonIndex]) {
+            if (buttonPairs[buttonIndex].p == buttonPairs[highlightedButtonIndex].p) {
                 changeButtonState(buttonIndex, ButtonState.DISABLED);
                 changeButtonState(highlightedButtonIndex, ButtonState.DISABLED);
                 if (getEnabledButtonCount() > 0) {
-                    if (wrongAnswer.contains(buttonPairs[buttonIndex].id) == false)
-                        PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), true);
-                    if (buttonPairs[buttonIndex].first.equals(((Button)wordTable.getChildAt(buttonIndex)).getText()))
-                        app.speak(buttonPairs[buttonIndex].first);
+                    if (wrongAnswer.contains(buttonPairs[buttonIndex].p.id) == false)
+                        PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], true);
+                    if (buttonPairs[buttonIndex].p.first.equals(((Button)wordTable.getChildAt(buttonIndex)).getText()))
+                        app.speak(buttonPairs[buttonIndex].p.first);
                 }
                 maybeFinished();
             }
             else { // Mismatch
-                if (wrongAnswer.contains(buttonPairs[buttonIndex].id) == false && wrongAnswer.contains(buttonPairs[highlightedButtonIndex].id) == false) {
-                    PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), false);
-                    PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[highlightedButtonIndex], SelectionMethod.RANDOM), false);
-                    app.helper.increaseConfusion(buttonPairs[buttonIndex].id, buttonPairs[highlightedButtonIndex].id);
+                if (wrongAnswer.contains(buttonPairs[buttonIndex].p.id) == false && wrongAnswer.contains(buttonPairs[highlightedButtonIndex].p.id) == false) {
+                    PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], false);
+                    PeriodHelper.recordRoundOutcome(app, buttonPairs[highlightedButtonIndex], false);
+                    app.helper.increaseConfusion(buttonPairs[buttonIndex].p.id, buttonPairs[highlightedButtonIndex].p.id);
                 }
-                wrongAnswer.add(buttonPairs[buttonIndex].id);
-                wrongAnswer.add(buttonPairs[highlightedButtonIndex].id);
+                wrongAnswer.add(buttonPairs[buttonIndex].p.id);
+                wrongAnswer.add(buttonPairs[highlightedButtonIndex].p.id);
                 changeButtonState(highlightedButtonIndex, ButtonState.ENABLED);
             }
             highlightedButtonIndex = -1;
@@ -166,11 +165,12 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
     public void newRound() {
         if (created) {
             wordTable.removeAllViews();
-            ArrayList<PairAndWord> words = new ArrayList<>();
+            ArrayList<PairSelectResult> pairs = PairChooser.ChoosePair(app, exerciseFragment.selectionMethod, PAIR_COUNT);
+            ArrayList<PSRAndWord> words = new ArrayList<>();
             for (int i=0; i<PAIR_COUNT; i++) {
-                Pair pair = PairChooser.ChoosePairRandom(app).p; // TODO: How to allow smart choosing?
-                words.add(new PairAndWord(pair, pair.first));
-                words.add(new PairAndWord(pair, pair.second));
+                PairSelectResult pair = pairs.get(i);
+                words.add(new PSRAndWord(pair, pair.p.first));
+                words.add(new PSRAndWord(pair, pair.p.second));
             }
 
             Collections.shuffle(words);
@@ -200,12 +200,7 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
 
         outState.putCharSequenceArray("labels", labels);
         outState.putBooleanArray("enabled", enabled);
-
-        long[] pairIds = new long[buttonPairs.length];
-        for (int i=0; i<pairIds.length; i++) {
-            pairIds[i] = buttonPairs[i].id;
-        }
-        outState.putLongArray("buttonPairIds", pairIds);
+        outState.putSerializable("buttonPairs", buttonPairs);
     }
 
     @Override
@@ -217,15 +212,7 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
             return ;
         }
 
-        long[] pairIds = savedInstanceState.getLongArray("buttonPairIds");
-        for (int i=0; i<pairIds.length; i++) {
-            buttonPairs[i] = app.pairsById.get(pairIds[i]);
-            if (buttonPairs[i] == null) { // The user removed one of the displayed pairs (from the word list) and switched back to the exercise tab
-                newRound();
-                return ;
-            }
-        }
-
+        buttonPairs = (PairSelectResult[]) savedInstanceState.getSerializable("buttonPairs");
         CharSequence[] labels = savedInstanceState.getCharSequenceArray("labels");
         boolean[] enabled = savedInstanceState.getBooleanArray("enabled");
 

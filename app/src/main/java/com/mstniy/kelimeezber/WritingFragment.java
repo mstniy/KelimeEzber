@@ -117,7 +117,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
             else
                 foreignSpeechAvailable = false;
             
-            currentPair = PairChooser.ChoosePair(app, exerciseFragment.selectionMethod);
+            currentPair = PairChooser.ChoosePair(app, exerciseFragment.selectionMethod, 1).get(0);
 
             if (letterTableAvailable) {
                 HashSet<Character> choices = new HashSet<>();
