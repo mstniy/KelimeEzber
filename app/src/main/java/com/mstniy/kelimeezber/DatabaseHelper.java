@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 class StampedEstimate implements Comparable<StampedEstimate>{
     public long timestamp;
@@ -553,6 +554,19 @@ class DatabaseHelper {
             db.update(TABLE_CONFUSION, values, "pair1 = ? AND pair2 = ?", new String[]{String.valueOf(pair1), String.valueOf(pair2)});
         }
         cur_exists.close();
+    }
+
+    public ArrayList<Long> getConfusionsForPair(Long pair) {
+        HashSet<Long> results = new HashSet<>();
+        Cursor cur = db.query(TABLE_CONFUSION, new String[]{"pair1", "pair2"}, "pair1 = ? OR pair2 = ?", new String[]{String.valueOf(pair), String.valueOf(pair)}, null, null, null);
+        if (cur.moveToFirst()) {
+            do {
+                results.add(cur.getLong(0));
+                results.add(cur.getLong(1));
+            } while (cur.moveToNext());
+        }
+        results.remove(pair);
+        return new ArrayList<>(results);
     }
 
     public void close() {

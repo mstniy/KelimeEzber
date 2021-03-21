@@ -332,4 +332,12 @@ public class MyApplication extends Application implements OnInitListener {
         else
             return (wordTranslationsBwd.get(p.second)).contains(s);
     }
+
+    ArrayList<Pair> getConfusionsForPair(Pair p) {
+        ArrayList<Long> ids = helper.getConfusionsForPair(p.id);
+        ArrayList<Pair> res = new ArrayList<>();
+        for (Long id : ids)
+            res.add(pairsById.get(id));
+        return res;
+    }
 }
