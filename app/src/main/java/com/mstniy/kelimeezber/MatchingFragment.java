@@ -134,17 +134,21 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
                 changeButtonState(buttonIndex, ButtonState.DISABLED);
                 changeButtonState(highlightedButtonIndex, ButtonState.DISABLED);
                 if (getEnabledButtonCount() > 0) {
-                    if (wrongAnswer.contains(buttonPairs[buttonIndex].p.id) == false)
-                        PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], true);
+                    if (wrongAnswer.contains(buttonPairs[buttonIndex].p.id) == false) // Avoid double-recording
+                        PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], RoundOutcome.PASS);
                     if (buttonPairs[buttonIndex].p.first.equals(((Button)wordTable.getChildAt(buttonIndex)).getText()))
                         app.speak(buttonPairs[buttonIndex].p.first);
+                }
+                else { // The outcome for the last remaining pair is at best NEUTRAL (or of course FAIL, if it got mismatched earlier on)
+                    if (wrongAnswer.contains(buttonPairs[buttonIndex].p.id) == false) // Avoid double-recording
+                        PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], RoundOutcome.NEUTRAL);
                 }
                 maybeFinished();
             }
             else { // Mismatch
                 if (wrongAnswer.contains(buttonPairs[buttonIndex].p.id) == false && wrongAnswer.contains(buttonPairs[highlightedButtonIndex].p.id) == false) {
-                    PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], false);
-                    PeriodHelper.recordRoundOutcome(app, buttonPairs[highlightedButtonIndex], false);
+                    PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], RoundOutcome.FAIL);
+                    PeriodHelper.recordRoundOutcome(app, buttonPairs[highlightedButtonIndex], RoundOutcome.FAIL);
                     app.helper.increaseConfusion(buttonPairs[buttonIndex].p.id, buttonPairs[highlightedButtonIndex].p.id);
                 }
                 wrongAnswer.add(buttonPairs[buttonIndex].p.id);

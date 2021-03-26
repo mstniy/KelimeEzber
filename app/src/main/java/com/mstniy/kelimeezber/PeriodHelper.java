@@ -1,12 +1,16 @@
 package com.mstniy.kelimeezber;
 
+enum RoundOutcome {
+    PASS, FAIL, NEUTRAL
+}
+
 public class PeriodHelper {
-    static void recordRoundOutcome(MyApplication app, PairSelectResult pair, boolean isPass) {
-        if (isPass) {
+    static void recordRoundOutcome(MyApplication app, PairSelectResult pair, RoundOutcome outcome) {
+        if (outcome == RoundOutcome.PASS) {
             pair.p.period *= 2;
             if (pair.p.period > MyApplication.MaxWordPeriod)
                 pair.p.period = 0;
-        } else {
+        } else if (outcome == RoundOutcome.FAIL){
             if (pair.p.period == 0 || pair.p.period > MyApplication.WordDropPeriod)
                 pair.p.period = MyApplication.WordDropPeriod;
             else if (pair.p.period > 1)
@@ -21,7 +25,7 @@ public class PeriodHelper {
             app.helper.setRoundID(app.roundId);
         }
         app.UpdatePair(pair.p);
-        if (pair.method == SelectionMethod.RANDOM)
-            app.helper.pushExerciseResult(isPass);
+        if (pair.method == SelectionMethod.RANDOM && outcome != RoundOutcome.NEUTRAL)
+            app.helper.pushExerciseResult(outcome == RoundOutcome.PASS);
     }
 }

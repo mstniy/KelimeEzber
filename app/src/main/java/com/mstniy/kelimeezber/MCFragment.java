@@ -117,14 +117,14 @@ public class MCFragment extends Fragment implements ExerciseFragmentInterface {
         Button button = buttons[buttonIndex];
         if (app.isACorrectAnswer(currentPair.p, button.getText().toString(), currentFwd)) {
             if (isPass)
-                PeriodHelper.recordRoundOutcome(app, currentPair, true);
+                PeriodHelper.recordRoundOutcome(app, currentPair, RoundOutcome.PASS);
             // TODO: We need to decrease confusion perhaps, see MatchingFragment
             exerciseFragment.FinishRound();
         } else {
             if (isPass) {
-                PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), false);
+                PeriodHelper.recordRoundOutcome(app, new PairSelectResult(buttonPairs[buttonIndex], SelectionMethod.RANDOM), RoundOutcome.FAIL);
                 app.helper.increaseConfusion(currentPair.p.id, buttonPairs[buttonIndex].id);
-                PeriodHelper.recordRoundOutcome(app, currentPair, false);
+                PeriodHelper.recordRoundOutcome(app, currentPair, RoundOutcome.FAIL);
             }
             isPass = false;
             setLabel();

@@ -174,7 +174,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
         if ((letterTableAvailable && userInput.getText().toString().compareTo(currentPair.p.first) == 0) ||
                 (letterTableAvailable == false && app.isACorrectAnswer(currentPair.p, userInput.getText().toString(), false))) {
             userInput.setText("");
-            PeriodHelper.recordRoundOutcome(app, currentPair, isPass);
+            PeriodHelper.recordRoundOutcome(app, currentPair, isPass ? RoundOutcome.PASS : RoundOutcome.FAIL);
             exerciseFragment.FinishRound();
         }
     }
