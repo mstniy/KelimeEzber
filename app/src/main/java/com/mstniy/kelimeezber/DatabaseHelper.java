@@ -116,6 +116,8 @@ class DatabaseHelper {
 
         db.execSQL(CREATE_ESTIMATES);
 
+        db.execSQL(CREATE_CONFUSION);
+
         db.setVersion(DB_VERSION);
     }
 

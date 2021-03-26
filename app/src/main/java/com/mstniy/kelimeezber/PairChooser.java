@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Random;
 
 enum SelectionMethod {
-    SMART, NEW, RANDOM
+    SMART, NEW, RANDOM, CONFUSION
 }
 
 class PairSelectResult implements Serializable {
@@ -77,7 +77,7 @@ public class PairChooser {
             if (pairs_index != numPairs-1) {
                 ArrayList<Pair> confusions = app.getConfusionsForPair(pairs.get(pairs_index).p);
                 if (confusions.size() != 0 && new Random().nextFloat() < CONFUSION_SELECT_PROB) {
-                    pairs.add(new PairSelectResult(confusions.get(new Random().nextInt(confusions.size())), SelectionMethod.RANDOM)); // We specify a selection method of RANDOM here, so that if the user fails this pair it won't get scheduled. We select the confused-with pair because of another pair, and we want *that* to be scheduled if the user fails.
+                    pairs.add(new PairSelectResult(confusions.get(new Random().nextInt(confusions.size())), SelectionMethod.CONFUSION));
                     pairs_index++;
                 }
             }
