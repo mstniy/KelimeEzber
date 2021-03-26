@@ -17,6 +17,7 @@ import com.google.android.flexbox.FlexboxLayout;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,7 +40,7 @@ class PSRAndWord {
 public class MatchingFragment extends Fragment implements ExerciseFragmentInterface {
     final String TAG = getClass().getName();
 
-    final static private int PAIR_COUNT = 4;
+    final static private int PAIR_COUNT = 6;
 
     MyApplication app;
     ExerciseFragment exerciseFragment;
@@ -71,7 +72,7 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
         });
         float factor = getContext().getResources().getDisplayMetrics().density;
         LayoutParams layout = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        int margin = (int)Math.ceil(factor*5);
+        int margin = (int)Math.ceil(factor*4);
         layout.setMargins(margin, margin*3, margin, margin*3);
         b.setLayoutParams(layout);
         return b;
@@ -133,13 +134,13 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
             if (buttonPairs[buttonIndex].p == buttonPairs[highlightedButtonIndex].p) {
                 changeButtonState(buttonIndex, ButtonState.DISABLED);
                 changeButtonState(highlightedButtonIndex, ButtonState.DISABLED);
-                if (getEnabledButtonCount() > 0) {
+                if (getEnabledButtonCount() > 1) {
                     if (wrongAnswer.contains(buttonPairs[buttonIndex].p.id) == false) // Avoid double-recording
                         PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], RoundOutcome.PASS);
                     if (buttonPairs[buttonIndex].p.first.equals(((Button)wordTable.getChildAt(buttonIndex)).getText()))
                         app.speak(buttonPairs[buttonIndex].p.first);
                 }
-                else { // The outcome for the last remaining pair is at best NEUTRAL (or of course FAIL, if it got mismatched earlier on)
+                else { // The outcome for the last two remaining pairs is at best NEUTRAL (or of course FAIL, if it got mismatched earlier on)
                     if (wrongAnswer.contains(buttonPairs[buttonIndex].p.id) == false) // Avoid double-recording
                         PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], RoundOutcome.NEUTRAL);
                 }
@@ -177,7 +178,13 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
                 words.add(new PSRAndWord(pair, pair.p.second));
             }
 
-            Collections.shuffle(words);
+            Collections.shuffle(words); // Shuffle the list of words before sorting it because there is no guarantee that the order returned by ChoosePair is random, and Collections.sort is stable
+            Collections.sort(words, new Comparator<PSRAndWord>() { // Sort words by length before displaying them to fit more words on the screen
+                @Override
+                public int compare(PSRAndWord o1, PSRAndWord o2) {
+                    return o1.word.length() - o2.word.length();
+                }
+            });
             for (int i=0; i<words.size(); i++) {
                 String word = words.get(i).word;
                 Button b = CreateButton(word, i);
