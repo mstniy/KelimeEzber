@@ -224,6 +224,13 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
         }
 
         buttonPairs = (PairSelectResult[]) savedInstanceState.getSerializable("buttonPairs");
+
+        for (PairSelectResult p : buttonPairs)
+            if (app.pairsById.containsKey(p.p.id) == false) { // The user removed the current pair (from the word list) and switched back to the exercise tab
+                newRound();
+                return ;
+            }
+
         CharSequence[] labels = savedInstanceState.getCharSequenceArray("labels");
         boolean[] enabled = savedInstanceState.getBooleanArray("enabled");
 
