@@ -42,7 +42,7 @@ public class ExerciseFragment extends Fragment {
 
     private final int PICKDATASET_REQUEST_CODE = 40914;
     final double MC_PROBABILITY = 0; // MC exercises are disabled. Matching exercises seem to be objectively better.
-    final double MATCH_PROBABILITY = 0.8;
+    final double MATCH_PROBABILITY = 0.5;
 
     MyApplication app;
     FrameLayout frame;

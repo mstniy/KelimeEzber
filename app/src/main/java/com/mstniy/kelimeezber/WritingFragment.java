@@ -28,7 +28,6 @@ import java.util.Random;
 public class WritingFragment extends Fragment implements ExerciseFragmentInterface {
     final String TAG = getClass().getName();
 
-    final private double LETTER_TABLE_AVAILABLE_PROB = 0.75;
     final private double FOREIGN_SPEECH_AVAILABLE_PROB = 0.35; // Valid only if the app is not muted.
 
     MyApplication app;
@@ -41,7 +40,7 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
     FlexboxLayout letterTable;
     EditText userInput;
     boolean letterTableAvailable; // If false, no letter table is given to the user. This is more challenging.
-    boolean foreignSpeechAvailable; // Valid only if the app is not muted.
+    boolean foreignSpeechAvailable; // Doesn't matter if tts is not supported
     boolean suppressEditTextChangedCallback = false;
     boolean isPass;
     PairSelectResult currentPair;
@@ -111,13 +110,10 @@ public class WritingFragment extends Fragment implements ExerciseFragmentInterfa
             suppressEditTextChangedCallback = false;
             letterTable.removeAllViews();
 
-            letterTableAvailable = new Random().nextDouble() <= LETTER_TABLE_AVAILABLE_PROB;
-            if (app.isMuted == false && app.ttsSupported)
-                foreignSpeechAvailable = new Random().nextDouble() <= FOREIGN_SPEECH_AVAILABLE_PROB;
-            else
-                foreignSpeechAvailable = false;
-            
             currentPair = PairChooser.ChoosePair(app, exerciseFragment.selectionMethod, 1).get(0);
+
+            letterTableAvailable = currentPair.p.period<128;
+            foreignSpeechAvailable = currentPair.p.period < 128 || new Random().nextDouble() <= FOREIGN_SPEECH_AVAILABLE_PROB;
 
             if (letterTableAvailable) {
                 HashSet<Character> choices = new HashSet<>();
