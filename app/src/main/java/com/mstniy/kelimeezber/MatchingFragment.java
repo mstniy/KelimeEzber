@@ -24,7 +24,8 @@ import java.util.Set;
 enum ButtonState {
     ENABLED,
     DISABLED,
-    HIGHLIGHTED
+    HIGHLIGHTED,
+    HINT
 }
 
 class PSRAndWord {
@@ -47,6 +48,7 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
     boolean created = false;
     FlexboxLayout wordTable;
     PairSelectResult[] buttonPairs = new PairSelectResult[2*PAIR_COUNT];
+    ArrayList<ButtonState> buttonStates = new ArrayList<>();
     Set<Long> wrongAnswer = new HashSet<>();
     int highlightedButtonIndex = -1;
 
@@ -87,6 +89,9 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
             button.setBackgroundTintList(ContextCompat.getColorStateList(getContext(), R.color.ButtonBlue));
         else if (state == ButtonState.DISABLED)
             button.setBackgroundTintList(ContextCompat.getColorStateList(getContext(), R.color.ButtonBlueDisabled));
+        else if (state == ButtonState.HINT)
+            button.setBackgroundTintList(ContextCompat.getColorStateList(getContext(), R.color.ButtonHint));
+        buttonStates.set(buttonIndex, state);
     }
 
     int getEnabledButtonCount() {
@@ -117,6 +122,15 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
         exerciseFragment.FinishRound();
     }
 
+    boolean matchingPair(int i, int j) {
+        String text_i = ((Button)wordTable.getChildAt(i)).getText().toString();
+        String text_j = ((Button)wordTable.getChildAt(j)).getText().toString();
+        if (text_i.equals(buttonPairs[i].p.first))
+            return app.isACorrectAnswer(buttonPairs[i].p, text_j, true);
+        else
+            return app.isACorrectAnswer(buttonPairs[i].p, text_j, false);
+    }
+
     void ButtonClicked(int buttonIndex) {
         if (highlightedButtonIndex == buttonIndex) {
             highlightedButtonIndex = -1;
@@ -131,9 +145,14 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
                 app.speak(buttonPairs[buttonIndex].p.first);
         }
         else {
-            if (buttonPairs[buttonIndex].p == buttonPairs[highlightedButtonIndex].p) {
+            if (matchingPair(buttonIndex, highlightedButtonIndex)) {
                 changeButtonState(buttonIndex, ButtonState.DISABLED);
                 changeButtonState(highlightedButtonIndex, ButtonState.DISABLED);
+                highlightedButtonIndex = -1;
+                for (int i=0; i<2*PAIR_COUNT; i++) { // Clear the hints
+                    if (buttonStates.get(i) == ButtonState.HINT)
+                        changeButtonState(i, ButtonState.ENABLED);
+                }
                 if (getEnabledButtonCount() > 1) {
                     if (wrongAnswer.contains(buttonPairs[buttonIndex].p.id) == false) // Avoid double-recording
                         PeriodHelper.recordRoundOutcome(app, buttonPairs[buttonIndex], RoundOutcome.PASS);
@@ -154,9 +173,12 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
                 }
                 wrongAnswer.add(buttonPairs[buttonIndex].p.id);
                 wrongAnswer.add(buttonPairs[highlightedButtonIndex].p.id);
-                changeButtonState(highlightedButtonIndex, ButtonState.ENABLED);
+                //changeButtonState(highlightedButtonIndex, ButtonState.ENABLED);
+                //highlightedButtonIndex = -1;
+                for (int i=0; i<2*PAIR_COUNT; i++) // Highlight correct answer(s)
+                    if (i != highlightedButtonIndex && wordTable.getChildAt(i).isEnabled() && matchingPair(highlightedButtonIndex, i))
+                        changeButtonState(i, ButtonState.HINT);
             }
-            highlightedButtonIndex = -1;
         }
     }
 
@@ -170,6 +192,7 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
     public void newRound() {
         if (created) {
             wordTable.removeAllViews();
+            buttonStates = new ArrayList<>();
             ArrayList<PairSelectResult> pairs = PairChooser.ChoosePair(app, exerciseFragment.selectionMethod, PAIR_COUNT);
             ArrayList<PSRAndWord> words = new ArrayList<>();
             for (int i=0; i<PAIR_COUNT; i++) {
@@ -190,6 +213,7 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
                 Button b = CreateButton(word, i);
                 buttonPairs[i] = words.get(i).p;
                 wordTable.addView(b);
+                buttonStates.add(ButtonState.ENABLED);
             }
 
             wrongAnswer.clear();
@@ -201,16 +225,14 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
         super.onSaveInstanceState(outState);
 
         CharSequence[] labels = new CharSequence[wordTable.getChildCount()];
-        boolean[] enabled = new boolean[labels.length];
 
         for (int i=0; i<labels.length; i++) {
             Button b = (Button)wordTable.getChildAt(i);
             labels[i] = b.getText().toString();
-            enabled[i] = b.isEnabled();
         }
 
         outState.putCharSequenceArray("labels", labels);
-        outState.putBooleanArray("enabled", enabled);
+        outState.putSerializable("buttonStates", buttonStates);
         outState.putSerializable("buttonPairs", buttonPairs);
     }
 
@@ -232,12 +254,12 @@ public class MatchingFragment extends Fragment implements ExerciseFragmentInterf
             }
 
         CharSequence[] labels = savedInstanceState.getCharSequenceArray("labels");
-        boolean[] enabled = savedInstanceState.getBooleanArray("enabled");
+        buttonStates = (ArrayList<ButtonState>)savedInstanceState.getSerializable("buttonStates");
 
         for (int i=0; i<labels.length; i++) {
             Button b = CreateButton(labels[i].toString(), i);
             wordTable.addView(b);
-            changeButtonState(i, enabled[i]?ButtonState.ENABLED:ButtonState.DISABLED);
+            changeButtonState(i, buttonStates.get(i));
         }
     }
 

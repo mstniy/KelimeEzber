@@ -55,8 +55,8 @@ public class MyApplication extends Application implements OnInitListener {
     boolean ttsSupported = false;
     HashSet<Pair> wlist;
     HashMap<Long, Pair> pairsById;
-    HashMap<String, HashSet<String>> wordTranslationsBwd;
-    HashMap<String, HashSet<String>> wordTranslationsFwd;
+    HashMap<String, HashSet<String>> wordTranslationsBwd; // second -> Set<first>
+    HashMap<String, HashSet<String>> wordTranslationsFwd; // first -> Set<second>
     ArrayList<StampedEstimate> estimates;
     String audioDatasetPath = null;
     MediaPlayer mediaPlayer = new MediaPlayer();

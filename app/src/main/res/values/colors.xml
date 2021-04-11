@@ -6,4 +6,5 @@
     <color name="ButtonBlue">#0098ec</color>
     <color name="ButtonBlueHighlight">#0267A0</color>
     <color name="ButtonBlueDisabled">#C8DCE7</color>
+    <color name="ButtonHint">#F33345</color>
 </resources>
